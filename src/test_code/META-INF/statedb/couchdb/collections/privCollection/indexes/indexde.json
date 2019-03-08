@@ -1,0 +1,6 @@
+{"index": {
+    "fields":[{"de_seq":"desc"}]
+} ,
+"name": "de_seqindex",
+"ddoc": "de_seqindexDoc",
+"type":"json"}

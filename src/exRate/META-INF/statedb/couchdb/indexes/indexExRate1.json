@@ -1,0 +1,6 @@
+{"index": {
+    "fields":["NAT_CD"]
+},
+"name": "NAT_CD-index",
+"ddoc": "NatQueryDoc",
+"type":"json"}

@@ -1,0 +1,6 @@
+{"index": {
+    "fields":[{"ADJ_MN_DSB_REQ_NO":"desc"}]
+} ,
+"name": "ADJ_MN_DSB_REQ_NO-index",
+"ddoc": "ADJ_MN_DSB_REQ_NOQueryDoc",
+"type":"json"}

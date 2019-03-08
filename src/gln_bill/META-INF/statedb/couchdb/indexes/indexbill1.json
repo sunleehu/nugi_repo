@@ -1,0 +1,6 @@
+{"index": {
+    "fields":[{"ADJ_REQ_NO":"desc"}]
+} ,
+"name": "selectQuery",
+"ddoc": "selectQueryDoc",
+"type":"json"}

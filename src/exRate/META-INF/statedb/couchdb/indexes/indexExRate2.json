@@ -1,0 +1,6 @@
+{"index": {
+    "fields":[{"UP_DTM":"desc"}]
+},
+"name": "periodQuery",
+"ddoc": "periodQueryDoc",
+"type":"json"}
