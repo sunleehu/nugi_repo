@@ -11,6 +11,8 @@ type glnbill struct {
 	AdjDt             string `json:"ADJ_DT"`
 	TxPrcpSum         string `json:"TX_PRCP_SUM"`
 	TxPrcpSumSign     string `json:"TX_PRCP_SUM_SIGN"`
+	SndrAdjAmt        string `json:"SNDR_ADJ_AMT"`
+	SndrAdjAmtSign    string `json:"SNDR_ADJ_AMT_SIGN"`
 	RcvrAdjAmt        string `json:"RCVR_ADJ_AMT"`
 	RcvrAdjAmtSign    string `json:"RCVR_ADJ_AMT_SIGN"`
 	GlnAdjAmt         string `json:"GLN_ADJ_AMT"`
