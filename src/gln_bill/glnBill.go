@@ -41,8 +41,8 @@ func (t *glnBillCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	if function == "putsttlbill" {
 		return t.putBill(stub, args)
 	} else if function == "getsttlbill" {
-		return t.getBill(stub, args)
-	} else if function == "getstllbillhistory" {
+		// 	return t.getBill(stub, args)
+		// } else if function == "getstllbillhistory" {
 		return t.getBillHistory(stub, args)
 	} else if function == "confirmsttlbill" {
 		return t.confirmBill(stub, args)
