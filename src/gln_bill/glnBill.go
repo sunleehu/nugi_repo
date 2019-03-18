@@ -222,7 +222,7 @@ func (t *glnBillCC) getBillHistory(stub shim.ChaincodeStubInterface, args []stri
 
 	// Valid Check Time String
 	if checkAtoi(qArgs.ReqStartTime) || checkAtoi(qArgs.ReqEndTime) {
-		return shim.Error("You must fill out the string number ReqStratTime and ReqEndTime")
+		return shim.Error(errMessage("BCCE0007", "You must fill out the string number ReqStratTime and ReqEndTime"))
 	}
 	//Default Size 100
 	var pgs int32
