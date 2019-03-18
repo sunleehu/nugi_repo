@@ -41,8 +41,8 @@ func (t *glnBillCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	if function == "putsttlbill" {
 		return t.putBill(stub, args)
 	} else if function == "getsttlbill" {
-		return t.getBill(stub, args)
-	} else if function == "getstllbillhistory" {
+		// 	return t.getBill(stub, args)
+		// } else if function == "getstllbillhistory" {
 		return t.getBillHistory(stub, args)
 	} else if function == "confirmsttlbill" {
 		return t.confirmBill(stub, args)
@@ -96,11 +96,10 @@ func (t *glnBillCC) putBill(stub shim.ChaincodeStubInterface, args []string) pb.
 
 		//Event JSON
 		evtMap[bill.SndrLocalGlnCd] = append(evtMap[bill.SndrLocalGlnCd], bill.AdjReqNo)
-		evtMap[bill.RcvrLocalGlnCd] = append(evtMap[bill.RcvrLocalGlnCd], bill.AdjReqNo)
 
 		keyList = append(keyList, bill.AdjReqNo)
 		validData = append(validData, glnBillJSONBytes)
-		pyld.Target = append(pyld.Target, bill.RcvrLocalGlnCd, bill.SndrLocalGlnCd)
+		pyld.Target = append(pyld.Target, bill.SndrLocalGlnCd)
 	}
 
 	// Duplicate Value Check in couchDB
@@ -153,7 +152,6 @@ func (t *glnBillCC) putBill(stub shim.ChaincodeStubInterface, args []string) pb.
 // This Function Performs Query. called by International GLN
 func (t *glnBillCC) getBill(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	var qArgs queryArgs
-	divcd := ""
 
 	// Json Decoding
 	err := json.Unmarshal([]byte(args[0]), &qArgs)
@@ -175,14 +173,6 @@ func (t *glnBillCC) getBill(stub shim.ChaincodeStubInterface, args []string) pb.
 		}
 	}
 
-	if qArgs.DivCd == "02" {
-		divcd = Receiver
-	} else if qArgs.DivCd == "01" {
-		divcd = Sender
-	} else {
-		return shim.Error(errMessage("BCCE0005", "You must fill out DIV_CODE"))
-	}
-
 	// Empty Value Check
 	if len(checkBlank(qArgs.AdjReqNo)) == 0 {
 		return shim.Error(errMessage("BCCE0005", "Couldn't find GLN_DE_NO in JSON"))
@@ -195,7 +185,7 @@ func (t *glnBillCC) getBill(stub shim.ChaincodeStubInterface, args []string) pb.
 	// 	pgs = pageSize
 	// }
 	// Query
-	queryString := fmt.Sprintf(`{"selector": {"ADJ_REQ_NO": "%s", "%s":"%s"}}`, qArgs.AdjReqNo, divcd, qArgs.LcGlnUnqCd)
+	queryString := fmt.Sprintf(`{"selector": {"ADJ_REQ_NO": "%s", "LOCAL_GLN_CD":"%s"}}`, qArgs.AdjReqNo, qArgs.LcGlnUnqCd)
 	queryResults, err := getQueryResultForQueryStringWithPagination(stub, queryString, 1, "")
 	if err != nil {
 		return shim.Error(errMessage("BCCE0008", err))
@@ -208,7 +198,6 @@ func (t *glnBillCC) getBill(stub shim.ChaincodeStubInterface, args []string) pb.
 // This Function Performs Periodic Query. called by International GLN
 func (t *glnBillCC) getBillHistory(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	var qArgs queryArgs
-	divcd := ""
 
 	// JSON Decoding
 	err := json.Unmarshal([]byte(args[0]), &qArgs)
@@ -230,13 +219,6 @@ func (t *glnBillCC) getBillHistory(stub shim.ChaincodeStubInterface, args []stri
 		}
 
 	}
-	if qArgs.DivCd == "02" {
-		divcd = Receiver
-	} else if qArgs.DivCd == "01" {
-		divcd = Sender
-	} else {
-		return shim.Error(errMessage("BCCE0005", "You must fill out DIV_CODE"))
-	}
 
 	// Valid Check Time String
 	if checkAtoi(qArgs.ReqStartTime) || checkAtoi(qArgs.ReqEndTime) {
@@ -251,7 +233,7 @@ func (t *glnBillCC) getBillHistory(stub shim.ChaincodeStubInterface, args []stri
 	}
 
 	// Query
-	queryString := fmt.Sprintf(`{"selector": {"$and":[{"%s": "%s"},{"ADJ_DT":{"$gte": "%s"}},{"ADJ_DT":{"$lte": "%s"}}]}}`, divcd, qArgs.LcGlnUnqCd, qArgs.ReqStartTime, qArgs.ReqEndTime)
+	queryString := fmt.Sprintf(`{"selector": {"$and":[{"LOCAL_GLN_CD": "%s"},{"ADJ_DT":{"$gte": "%s"}},{"ADJ_DT":{"$lte": "%s"}}]}}`, qArgs.LcGlnUnqCd, qArgs.ReqStartTime, qArgs.ReqEndTime)
 	queryResults, err := getQueryResultForQueryStringWithPagination(stub, queryString, pgs, qArgs.BookMark)
 	if err != nil {
 		return shim.Error(errMessage("BCCE0008", err))
@@ -263,7 +245,6 @@ func (t *glnBillCC) getBillHistory(stub shim.ChaincodeStubInterface, args []stri
 
 func (t *glnBillCC) confirmBill(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	var qArgs queryArgs
-	divcd := ""
 
 	// Json Decoding
 	err := json.Unmarshal([]byte(args[0]), &qArgs)
@@ -283,15 +264,7 @@ func (t *glnBillCC) confirmBill(stub shim.ChaincodeStubInterface, args []string)
 		}
 	}
 
-	if qArgs.DivCd == "02" {
-		divcd = Receiver
-	} else if qArgs.DivCd == "01" {
-		divcd = Sender
-	} else {
-		return shim.Error(errMessage("BCCE0005", "You must fill out DIV_Cd"))
-	}
-
-	queryString := fmt.Sprintf(`{"selector": {"ADJ_REQ_NO": "%s","%s":"%s"}}`, qArgs.AdjReqNo, divcd, qArgs.LcGlnUnqCd)
+	queryString := fmt.Sprintf(`{"selector": {"ADJ_REQ_NO": "%s","LOCAL_GLN_CD":"%s"}}`, qArgs.AdjReqNo, qArgs.LcGlnUnqCd)
 	logger.Debug("QueryString:", queryString)
 
 	resultsIterator, err := stub.GetQueryResult(queryString)
@@ -315,22 +288,18 @@ func (t *glnBillCC) confirmBill(stub shim.ChaincodeStubInterface, args []string)
 		json.Unmarshal(queryResponse.Value, &bill)
 		logger.Debug("QueryResponse:", queryResponse)
 		// Update Value
-		if qArgs.DivCd == "02" {
-			bill.RcvrAdjDfnYn = "Y"
-		} else if qArgs.DivCd == "01" {
-			bill.SndrAdjDfnYn = "Y"
+		bill.SndrAdjDfnYn = "Y"
 
-			jtx, err := json.Marshal(bill)
+		jtx, err := json.Marshal(bill)
 
-			if err != nil {
-				return shim.Error(errMessage("BCCE0004", err))
-			}
+		if err != nil {
+			return shim.Error(errMessage("BCCE0004", err))
+		}
 
-			// Update CouchDB
-			err = stub.PutState(queryResponse.Key, jtx)
-			if err != nil {
-				return shim.Error(errMessage("BCCE0010", err))
-			}
+		// Update CouchDB
+		err = stub.PutState(queryResponse.Key, jtx)
+		if err != nil {
+			return shim.Error(errMessage("BCCE0010", err))
 		}
 		defer resultsIterator.Close()
 	}
