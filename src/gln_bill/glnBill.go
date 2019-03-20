@@ -278,10 +278,10 @@ func (t *glnBillCC) confirmBill(stub shim.ChaincodeStubInterface, args []string)
 	if err != nil {
 		return shim.Error(errMessage("BCCE0008", err))
 	}
-	defer resultsIterator.Close()
 	if !resultsIterator.HasNext() {
 		return shim.Error(errMessage("BCCE0010", fmt.Sprintf("Data %s", args[0])))
 	}
+	defer resultsIterator.Close()
 
 	for resultsIterator.HasNext() {
 		queryResponse, err := resultsIterator.Next()

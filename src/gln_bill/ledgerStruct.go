@@ -35,7 +35,7 @@ type queryArgs struct {
 	AdjReqNo     string `json:"ADJ_REQ_NO"`     //정산요청번호
 	ReqStartTime string `json:"REQ_START_TIME"` // 기간 시작값
 	ReqEndTime   string `json:"REQ_END_TIME"`   // 기간 끝 값
-	LcGlnUnqCd   string `json:"LOCALGLN_CODE"`  // Local GLN 코드
+	LcGlnUnqCd   string `json:"LOCAL_GLN_CD"`   // Local GLN 코드
 	DivCd        string `json:"DIV_CODE"`       // 구분 코드
 	DeTpDvCd     string `json:"DE_TP_DV_CD"`    // 정상 취소 구분 코드
 	PageSize     int32  `json:"PAGE_COUNT"`
