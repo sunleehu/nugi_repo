@@ -84,14 +84,21 @@ func (t *glnBillCC) putBill(stub shim.ChaincodeStubInterface, args []string) pb.
 		//TX ID
 		bill.Txid = txID
 		// Empty Value Check
-		if len(checkBlank(bill.AdjReqNo)) == 0 {
-			return shim.Error(errMessage("BCCE0005", "Check ADJ_REQ_NO in JSON"))
+		if len(checkBlank(bill.AdjReqNo)) == 0 || len(checkBlank(bill.SndrLocalGlnCd)) == 0 {
+			return shim.Error(errMessage("BCCE0005", "Check ADJ_REQ_NO or SndrLocalGlnCd in JSON"))
 		}
 
 		// Json Encoding
 		glnBillJSONBytes, err := json.Marshal(bill)
 		if err != nil {
 			return shim.Error(errMessage("BCCE0004", err))
+		}
+		//add key level
+		var callargs []string
+		callargs = append(callargs, bill.AdjReqNo, endorserMsp, cdToMSP(bill.SndrLocalGlnCd))
+		_, errm := addOrgs(stub, callargs)
+		if errm != "" {
+			return shim.Error(errMessage("BCCE0011", errm))
 		}
 
 		//Event JSON

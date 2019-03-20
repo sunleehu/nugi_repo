@@ -47,3 +47,7 @@ type hEvt struct {
 	Target []string
 	Data   interface{}
 }
+
+const endorserMsp = "EndorserMSP"
+const channelID = "glnchannel"
+const libEp = "libep"
