@@ -41,15 +41,14 @@ func (t *glnBillCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	if function == "putsttlbill" {
 		return t.putBill(stub, args)
 	} else if function == "getsttlbill" {
-		// 	return t.getBill(stub, args)
-		// } else if function == "getstllbillhistory" {
+		return t.getBill(stub, args)
+	} else if function == "getstllbillhistory" {
 		return t.getBillHistory(stub, args)
 	} else if function == "confirmsttlbill" {
 		return t.confirmBill(stub, args)
 	} else if function == "setLogLevel" {
 		return setLogLevel(args[0])
 	}
-
 	return shim.Error(errMessage("BCCE0001", "Received unknown function invocation "+function))
 }
 
@@ -183,7 +182,7 @@ func (t *glnBillCC) getBill(stub shim.ChaincodeStubInterface, args []string) pb.
 
 	// Empty Value Check
 	if len(checkBlank(qArgs.AdjReqNo)) == 0 {
-		return shim.Error(errMessage("BCCE0005", "Couldn't find GLN_DE_NO in JSON"))
+		return t.getBillHistory(stub, args)
 	}
 	//Default Size 100
 	// var pgs int32
