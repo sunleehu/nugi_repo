@@ -41,6 +41,9 @@ func addOrgs(stub shim.ChaincodeStubInterface, args []string) (string, string) {
 	var err error
 	var nargs [][]byte
 
+	/* nargs[0] = chaincode function name
+	nargs[1:]... = arguments...
+	*/
 	epBytes, err = stub.GetStateValidationParameter(args[0])
 	fmt.Println("EP Bytes", epBytes)
 	nargs = append(nargs, []byte("addOrgs"), epBytes, []byte(args[1]), []byte(args[2]))
@@ -51,8 +54,12 @@ func addOrgs(stub shim.ChaincodeStubInterface, args []string) (string, string) {
 		logger.Error(err)
 		return "", err.Error()
 	}
-	fmt.Println("resp:", string(resp.GetPayload()))
-	fmt.Println("resp payload:", string(resp.Payload))
+
+	if resp.GetStatus() != 200 {
+		logger.Info("Invoke Response Payload:", string(resp.GetPayload()))
+		logger.Info("Invoke Response status", resp.GetStatus())
+		return "", string(resp.GetPayload())
+	}
 
 	// set the modified endorsement policy for the key
 	err = stub.SetStateValidationParameter(args[0], resp.GetPayload())

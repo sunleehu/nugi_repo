@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/hyperledger/fabric/core/chaincode/lib/cid"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	pb "github.com/hyperledger/fabric/protos/peer"
 )
@@ -361,10 +362,10 @@ func (t *fxRateCC) putXchRate(stub shim.ChaincodeStubInterface, args []string) p
 	}
 
 	//check identity
-	// err := cid.AssertAttributeValue(stub, "ACC_ROLE", "INT")
-	// if err != nil {
-	// 	return shim.Error(errMessage("BCCE0002", "This function Only for INT GLN"))
-	// }
+	err := cid.AssertAttributeValue(stub, "ACC_ROLE", "INT")
+	if err != nil {
+		return shim.Error(errMessage("BCCE0002", "This function Only for INT GLN"))
+	}
 	txID := stub.GetTxID()
 	var validData [][]byte
 	var keyList []string

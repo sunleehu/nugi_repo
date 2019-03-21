@@ -63,11 +63,12 @@ func (t *glnBillCC) putBill(stub shim.ChaincodeStubInterface, args []string) pb.
 	evtMap := make(map[string][]string)
 	var pyld hEvt
 	evtCheck := false
+
 	// Identity Check
-	// err := cid.AssertAttributeValue(stub, "ACC_ROLE", "INT")
-	// if err != nil {
-	// 	return shim.Error(errMessage("BCCE0002", "This function Only for INT GLN"))
-	// }
+	err := cid.AssertAttributeValue(stub, "ACC_ROLE", "INT")
+	if err != nil {
+		return shim.Error(errMessage("BCCE0002", "This function Only for INT GLN"))
+	}
 	txID := stub.GetTxID()
 	var validData [][]byte
 	var keyList []string
