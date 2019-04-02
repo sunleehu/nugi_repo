@@ -41,15 +41,14 @@ func (t *glnBillCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	if function == "putsttlbill" {
 		return t.putBill(stub, args)
 	} else if function == "getsttlbill" {
-		// 	return t.getBill(stub, args)
-		// } else if function == "getstllbillhistory" {
+		return t.getBill(stub, args)
+	} else if function == "getstllbillhistory" {
 		return t.getBillHistory(stub, args)
 	} else if function == "confirmsttlbill" {
 		return t.confirmBill(stub, args)
 	} else if function == "setLogLevel" {
 		return setLogLevel(args[0])
 	}
-
 	return shim.Error(errMessage("BCCE0001", "Received unknown function invocation "+function))
 }
 
@@ -63,11 +62,12 @@ func (t *glnBillCC) putBill(stub shim.ChaincodeStubInterface, args []string) pb.
 	evtMap := make(map[string][]string)
 	var pyld hEvt
 	evtCheck := false
+
 	// Identity Check
-	// err := cid.AssertAttributeValue(stub, "ACC_ROLE", "INT")
-	// if err != nil {
-	// 	return shim.Error(errMessage("BCCE0002", "This function Only for INT GLN"))
-	// }
+	err := cid.AssertAttributeValue(stub, "ACC_ROLE", "INT")
+	if err != nil {
+		return shim.Error(errMessage("BCCE0002", "This function Only for INT GLN"))
+	}
 	txID := stub.GetTxID()
 	var validData [][]byte
 	var keyList []string
@@ -84,14 +84,21 @@ func (t *glnBillCC) putBill(stub shim.ChaincodeStubInterface, args []string) pb.
 		//TX ID
 		bill.Txid = txID
 		// Empty Value Check
-		if len(checkBlank(bill.AdjReqNo)) == 0 {
-			return shim.Error(errMessage("BCCE0005", "Check ADJ_REQ_NO in JSON"))
+		if len(checkBlank(bill.AdjReqNo)) == 0 || len(checkBlank(bill.SndrLocalGlnCd)) == 0 {
+			return shim.Error(errMessage("BCCE0005", "Check ADJ_REQ_NO or SndrLocalGlnCd in JSON"))
 		}
 
 		// Json Encoding
 		glnBillJSONBytes, err := json.Marshal(bill)
 		if err != nil {
 			return shim.Error(errMessage("BCCE0004", err))
+		}
+		//add key level
+		var callargs []string
+		callargs = append(callargs, bill.AdjReqNo, endorserMsp, cdToMSP(bill.SndrLocalGlnCd))
+		_, errm := addOrgs(stub, callargs)
+		if errm != "" {
+			return shim.Error(errMessage("BCCE0011", errm))
 		}
 
 		//Event JSON
@@ -175,7 +182,7 @@ func (t *glnBillCC) getBill(stub shim.ChaincodeStubInterface, args []string) pb.
 
 	// Empty Value Check
 	if len(checkBlank(qArgs.AdjReqNo)) == 0 {
-		return shim.Error(errMessage("BCCE0005", "Couldn't find GLN_DE_NO in JSON"))
+		return t.getBillHistory(stub, args)
 	}
 	//Default Size 100
 	// var pgs int32
@@ -222,7 +229,7 @@ func (t *glnBillCC) getBillHistory(stub shim.ChaincodeStubInterface, args []stri
 
 	// Valid Check Time String
 	if checkAtoi(qArgs.ReqStartTime) || checkAtoi(qArgs.ReqEndTime) {
-		return shim.Error("You must fill out the string number ReqStratTime and ReqEndTime")
+		return shim.Error(errMessage("BCCE0007", "You must fill out the string number ReqStratTime and ReqEndTime"))
 	}
 	//Default Size 100
 	var pgs int32
@@ -271,10 +278,10 @@ func (t *glnBillCC) confirmBill(stub shim.ChaincodeStubInterface, args []string)
 	if err != nil {
 		return shim.Error(errMessage("BCCE0008", err))
 	}
-	defer resultsIterator.Close()
 	if !resultsIterator.HasNext() {
 		return shim.Error(errMessage("BCCE0010", fmt.Sprintf("Data %s", args[0])))
 	}
+	defer resultsIterator.Close()
 
 	for resultsIterator.HasNext() {
 		queryResponse, err := resultsIterator.Next()

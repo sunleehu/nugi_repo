@@ -64,3 +64,9 @@ func rmvDupVal(arr []string) []string {
 	}
 	return keys
 }
+
+func cdToMSP(str string) string {
+	str = strings.Title(strings.ToLower(str))
+	str = str + "OrgMSP"
+	return str
+}

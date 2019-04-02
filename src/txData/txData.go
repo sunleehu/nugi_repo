@@ -62,10 +62,10 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 		return shim.Error(errMessage("BCCE0005", "GET transient Data Error"))
 	}
 	// Check Identity
-	// err = cid.AssertAttributeValue(stub, "ACC_ROLE", "INT")
-	// if err != nil {
-	// 	return shim.Error(errMessage("BCCE0002", "This function Only for INT GLN"))
-	// }
+	err = cid.AssertAttributeValue(stub, "ACC_ROLE", "INT")
+	if err != nil {
+		return shim.Error(errMessage("BCCE0002", "This function Only for INT GLN"))
+	}
 
 	fmt.Println(string(privData["args"]))
 
