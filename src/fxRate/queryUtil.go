@@ -93,11 +93,11 @@ func constructQueryResponseFromIterator(resultsIterator shim.StateQueryIteratorI
 
 func addPaginationMetadataToQueryResults(buffer *bytes.Buffer, responseMetadata *pb.QueryResponseMetadata) *bytes.Buffer {
 
-	buffer.WriteString("\"RecordsCount\":")
+	buffer.WriteString("\"PAGE_COUNT\":")
 	buffer.WriteString("\"")
 	buffer.WriteString(fmt.Sprintf("%v", responseMetadata.FetchedRecordsCount))
 	buffer.WriteString("\"")
-	buffer.WriteString(", \"Bookmark\":")
+	buffer.WriteString(", \"PAGE_NEXT_ID\":")
 	buffer.WriteString("\"")
 	buffer.WriteString(responseMetadata.Bookmark)
 	buffer.WriteString("\"}")

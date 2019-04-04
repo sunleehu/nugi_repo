@@ -236,19 +236,19 @@ func (t *fxRateCC) getXchRate(stub shim.ChaincodeStubInterface, args []string) p
 	}
 	// Empty Value Check
 	if len(checkBlank(qArgs.LocalGlnXchrInfUnqno)) == 0 {
-		return shim.Error(errMessage("BCCE0005", "Couldn't find LOCAL_GLN_XCHR_INF_UNQNO in JSON"))
+		return t.getXchRateHistory(stub, args)
 	}
 
 	queryString := fmt.Sprintf(`{"selector": {"LOCAL_GLN_XCHR_INF_UNQNO": "%s"}}`, qArgs.LocalGlnXchrInfUnqno)
 	//Default Size 100
-	var pgs int32
-	if qArgs.PageSize > 0 {
-		pgs = qArgs.PageSize
-	} else {
-		pgs = pageSize
-	}
+	// var pgs int32
+	// if qArgs.PageSize > 0 {
+	// 	pgs = qArgs.PageSize
+	// } else {
+	// 	pgs = pageSize
+	// }
 	// Query
-	queryResults, err := getQueryResultForQueryStringWithPagination(stub, queryString, pgs, qArgs.BookMark)
+	queryResults, err := getQueryResultForQueryStringWithPagination(stub, queryString, 1, "")
 	if err != nil {
 		return shim.Error(errMessage("BCCE0008", err))
 	}
