@@ -172,6 +172,10 @@ func (t *glnBillCC) getBill(stub shim.ChaincodeStubInterface, args []string) pb.
 		return shim.Error(errMessage("BCCE0005", m))
 	}
 	if attr {
+		//for international GLN check query argument check
+		if len(checkBlank(qArgs.LcGlnUnqCd)) == 0 {
+			return shim.Error(errMessage("BCCE0005", "Check your LOCALGLN_CODE in JSON"))
+		}
 
 	} else {
 		err = cid.AssertAttributeValue(stub, "LCL_UNQ_CD", qArgs.LcGlnUnqCd)
@@ -184,6 +188,7 @@ func (t *glnBillCC) getBill(stub shim.ChaincodeStubInterface, args []string) pb.
 	if len(checkBlank(qArgs.AdjReqNo)) == 0 {
 		return t.getBillHistory(stub, args)
 	}
+
 	//Default Size 100
 	// var pgs int32
 	// if qArgs.PageSize > 0 {
@@ -191,6 +196,7 @@ func (t *glnBillCC) getBill(stub shim.ChaincodeStubInterface, args []string) pb.
 	// } else {
 	// 	pgs = pageSize
 	// }
+
 	// Query
 	queryString := fmt.Sprintf(`{"selector": {"ADJ_REQ_NO": "%s", "LOCAL_GLN_CD":"%s"}}`, qArgs.AdjReqNo, qArgs.LcGlnUnqCd)
 	queryResults, err := getQueryResultForQueryStringWithPagination(stub, queryString, 1, "")
@@ -229,7 +235,7 @@ func (t *glnBillCC) getBillHistory(stub shim.ChaincodeStubInterface, args []stri
 
 	// Valid Check Time String
 	if checkAtoi(qArgs.ReqStartTime) || checkAtoi(qArgs.ReqEndTime) {
-		return shim.Error(errMessage("BCCE0007", "You must fill out the string number ReqStratTime and ReqEndTime"))
+		return shim.Error(errMessage("BCCE0007", "You must fill out the string number ReqStartTime and ReqEndTime"))
 	}
 	//Default Size 100
 	var pgs int32

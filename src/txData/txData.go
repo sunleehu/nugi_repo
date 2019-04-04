@@ -26,7 +26,7 @@ type txDataCC struct {
 func main() {
 	err := shim.Start(new(txDataCC))
 	if err != nil {
-		fmt.Printf("Error starting txLog chaincode: %s", err)
+		fmt.Printf("Error starting txData chaincode: %s", err)
 	}
 }
 
@@ -238,11 +238,11 @@ func (t *txDataCC) getTxData(stub shim.ChaincodeStubInterface, args []string) pb
 	} else if len(checkBlank(qArgs.GlnTxHash)) == 64 {
 		hash = qArgs.GlnTxHash
 	} else {
-		return shim.Error(errMessage("BCCE0005", "Check your GLN_TX_NO or GLN_TX_HASH in JSON"))
+		return t.getTxDataHistory(stub, args)
 	}
 
 	pubQueryRes, err := stub.GetState(hash)
-	fmt.Println("pubquery ", pubQueryRes)
+
 	if err != nil {
 		return shim.Error(errMessage("BCCE0008", err))
 	}
