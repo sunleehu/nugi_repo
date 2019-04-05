@@ -3,12 +3,12 @@ package main
 //Settlement Log Ledger Struct
 
 type glnbill struct {
-	AdjReqNo           string `json:"ADJ_REQ_NO"`
+	AdjReqNo           string `json:"ADJ_PBL_NO"`
 	SndrLocalGlnCd     string `json:"LOCAL_GLN_CD"`
 	AdjSDt             string `json:"ADJ_S_DT"`
 	AdjEDt             string `json:"ADJ_E_DT"`
-	AdjTxCnt           uint64 `json:"ADJ_TX_CNT"`
-	AdjDt              string `json:"ADJ_DT"`
+	AdjTxCnt           uint64 `json:"ADJ_PBL_TX_CNT"`
+	AdjDt              string `json:"ADJ_PBL_DT"`
 	TxPrcpSum          string `json:"TX_PRCP_SUM"`
 	TxPrcpSumSign      string `json:"TX_PRCP_SUM_SIGN"`
 	SndrAdjAmt         string `json:"SNDR_ADJ_AMT"`
