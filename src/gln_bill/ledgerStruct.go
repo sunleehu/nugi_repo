@@ -3,7 +3,7 @@ package main
 //Settlement Log Ledger Struct
 
 type glnbill struct {
-	AdjReqNo           string `json:"ADJ_PBL_NO"`
+	AdjPblNo           string `json:"ADJ_PBL_NO"`
 	SndrLocalGlnCd     string `json:"LOCAL_GLN_CD"`
 	AdjSDt             string `json:"ADJ_S_DT"`
 	AdjEDt             string `json:"ADJ_E_DT"`
@@ -36,7 +36,7 @@ type glnbill struct {
 
 // Query JSON struct
 type queryArgs struct {
-	AdjReqNo     string `json:"ADJ_REQ_NO"`     //정산요청번호
+	AdjPblNo     string `json:"ADJ_PBL_NO"`     //정산요청번호
 	ReqStartTime string `json:"REQ_START_TIME"` // 기간 시작값
 	ReqEndTime   string `json:"REQ_END_TIME"`   // 기간 끝 값
 	LcGlnUnqCd   string `json:"LOCALGLN_CODE"`  // Local GLN 코드

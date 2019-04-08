@@ -84,8 +84,8 @@ func (t *glnBillCC) putBill(stub shim.ChaincodeStubInterface, args []string) pb.
 		//TX ID
 		bill.Txid = txID
 		// Empty Value Check
-		if len(checkBlank(bill.AdjReqNo)) == 0 || len(checkBlank(bill.SndrLocalGlnCd)) == 0 {
-			return shim.Error(errMessage("BCCE0005", "Check ADJ_REQ_NO or SndrLocalGlnCd in JSON"))
+		if len(checkBlank(bill.AdjPblNo)) == 0 || len(checkBlank(bill.SndrLocalGlnCd)) == 0 {
+			return shim.Error(errMessage("BCCE0005", "Check ADJ_PBL_NO or SndrLocalGlnCd in JSON"))
 		}
 
 		// Json Encoding
@@ -95,23 +95,23 @@ func (t *glnBillCC) putBill(stub shim.ChaincodeStubInterface, args []string) pb.
 		}
 		//add key level
 		var callargs []string
-		callargs = append(callargs, bill.AdjReqNo, endorserMsp, cdToMSP(bill.SndrLocalGlnCd))
+		callargs = append(callargs, bill.AdjPblNo, endorserMsp, cdToMSP(bill.SndrLocalGlnCd))
 		_, errm := addOrgs(stub, callargs)
 		if errm != "" {
 			return shim.Error(errMessage("BCCE0011", errm))
 		}
 
 		//Event JSON
-		evtMap[bill.SndrLocalGlnCd] = append(evtMap[bill.SndrLocalGlnCd], bill.AdjReqNo)
+		evtMap[bill.SndrLocalGlnCd] = append(evtMap[bill.SndrLocalGlnCd], bill.AdjPblNo)
 
-		keyList = append(keyList, bill.AdjReqNo)
+		keyList = append(keyList, bill.AdjPblNo)
 		validData = append(validData, glnBillJSONBytes)
 		pyld.Target = append(pyld.Target, bill.SndrLocalGlnCd)
 	}
 
 	// Duplicate Value Check in couchDB
-	mulQuery := multiQueryMaker("ADJ_REQ_NO", keyList)
-	queryString := fmt.Sprintf(`{"selector":{%s}, "fields":[%s]}`, mulQuery, `"ADJ_REQ_NO","TX_ID"`)
+	mulQuery := multiQueryMaker("ADJ_PBL_NO", keyList)
+	queryString := fmt.Sprintf(`{"selector":{%s}, "fields":[%s]}`, mulQuery, `"ADJ_PBL_NO","TX_ID"`)
 
 	fmt.Println(queryString)
 	exs, res, err := isExist(stub, queryString)
@@ -185,7 +185,7 @@ func (t *glnBillCC) getBill(stub shim.ChaincodeStubInterface, args []string) pb.
 	}
 
 	// Empty Value Check
-	if len(checkBlank(qArgs.AdjReqNo)) == 0 {
+	if len(checkBlank(qArgs.AdjPblNo)) == 0 {
 		return t.getBillHistory(stub, args)
 	}
 
@@ -198,7 +198,7 @@ func (t *glnBillCC) getBill(stub shim.ChaincodeStubInterface, args []string) pb.
 	// }
 
 	// Query
-	queryString := fmt.Sprintf(`{"selector": {"ADJ_REQ_NO": "%s", "LOCAL_GLN_CD":"%s"}}`, qArgs.AdjReqNo, qArgs.LcGlnUnqCd)
+	queryString := fmt.Sprintf(`{"selector": {"ADJ_PBL_NO": "%s", "LOCAL_GLN_CD":"%s"}}`, qArgs.AdjPblNo, qArgs.LcGlnUnqCd)
 	queryResults, err := getQueryResultForQueryStringWithPagination(stub, queryString, 1, "")
 	if err != nil {
 		return shim.Error(errMessage("BCCE0008", err))
@@ -277,7 +277,7 @@ func (t *glnBillCC) confirmBill(stub shim.ChaincodeStubInterface, args []string)
 		}
 	}
 
-	queryString := fmt.Sprintf(`{"selector": {"ADJ_REQ_NO": "%s","LOCAL_GLN_CD":"%s"}}`, qArgs.AdjReqNo, qArgs.LcGlnUnqCd)
+	queryString := fmt.Sprintf(`{"selector": {"ADJ_PBL_NO": "%s","LOCAL_GLN_CD":"%s"}}`, qArgs.AdjPblNo, qArgs.LcGlnUnqCd)
 	logger.Debug("QueryString:", queryString)
 
 	resultsIterator, err := stub.GetQueryResult(queryString)
