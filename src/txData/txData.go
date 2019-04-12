@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"strings"
 
 	"github.com/hyperledger/fabric/core/chaincode/lib/cid"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
@@ -100,34 +99,29 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 	}
 
 	// Duplicate Value Check in couchDB
-	mulQuery := multiQueryMaker("GLN_TX_HASH", keyList)
-	queryString := fmt.Sprintf(`{"selector":%s, "fields":[%s]}`, mulQuery, `"GLN_TX_HASH","TX_ID"`)
-	fmt.Println(queryString)
+	// mulQuery := multiQueryMaker("GLN_TX_HASH", keyList)
+	// queryString := fmt.Sprintf(`{"selector":%s, "fields":[%s]}`, mulQuery, `"GLN_TX_HASH","TX_ID"`)
+	// fmt.Println(queryString)
 
-	exs, res, err := isExist(stub, queryString)
-	if err != nil {
-		return shim.Error(errMessage("BCCE0008", err))
-	}
-	if exs {
-		if err != nil {
-			return shim.Error(errMessage("BCCE0008", err))
-		}
-		var qResp []pubData
-		json.Unmarshal(res, &qResp)
-		for j := 0; j < len(qResp); j++ {
-			var respJ respStruct
-			respJ.BcTxID = qResp[j].BcTxID
-			respJ.GlnTxNo = keyMap[qResp[j].GlnTxHash]
-			respJSONBytes, err := json.Marshal(respJ)
-			if err != nil {
-				return shim.Error(errMessage("BCCE0004", err))
-			}
-			duplList = append(duplList, string(respJSONBytes))
-
-		}
-
-		return shim.Error(errMessage("BCCE0006", fmt.Sprintf("[%s]", strings.Join(duplList, ","))))
-	}
+	// exs, res, err := isExist(stub, queryString)
+	// if err != nil {
+	// 	return shim.Error(errMessage("BCCE0008", err))
+	// }
+	// if exs {
+	// 	var qResp []pubData
+	// 	json.Unmarshal(res, &qResp)
+	// 	for j := 0; j < len(qResp); j++ {
+	// 		var respJ respStruct
+	// 		respJ.BcTxID = qResp[j].BcTxID
+	// 		respJ.GlnTxNo = keyMap[qResp[j].GlnTxHash]
+	// 		respJSONBytes, err := json.Marshal(respJ)
+	// 		if err != nil {
+	// 			return shim.Error(errMessage("BCCE0004", err))
+	// 		}
+	// 		duplList = append(duplList, string(respJSONBytes))
+	// 	}
+	// 	return shim.Error(errMessage("BCCE0006", fmt.Sprintf("[%s]", strings.Join(duplList, ","))))
+	// }
 
 	// Insert Loop
 	for i := 0; i < len(txdata); i++ {
@@ -197,7 +191,6 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 		logger.Debug("TRANSACTION_DATA_SAVED", string(dat))
 		// EVENT!!!
 		stub.SetEvent("TRANSACTION_DATA_SAVED", dat)
-
 	}
 
 	logger.Info("Insert Complete")
