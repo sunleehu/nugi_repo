@@ -29,7 +29,7 @@ type glnbill struct {
 	SndrAdjDfnYn       string `json:"LOCAL_GLN_ADJ_DFN_YN"`
 	TotalFeeSign       string `json:"TOTAL_FEE_SIGN"`
 	TotalFeeAmount     string `json:"TOTAL_FEE_AMOUNT"`
-	SettlementFileName string `json:"SETTLENMENT_FILE_NAME"`
+	SettlementFileName string `json:"SETTLEMENT_FILE_NAME"`
 	FeeFileName        string `json:"FEE_FILE_NAME"`
 	Txid               string `json:"TX_ID"`
 }
