@@ -85,7 +85,6 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 	txID := stub.GetTxID()
 	keyMap := make(map[string]string)
 	var keyList []string
-	var duplList []string
 
 	//validation loop
 	for k := 0; k < len(txdata); k++ {
@@ -99,6 +98,7 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 	}
 
 	// Duplicate Value Check in couchDB
+	// var duplList []string
 	// mulQuery := multiQueryMaker("GLN_TX_HASH", keyList)
 	// queryString := fmt.Sprintf(`{"selector":%s, "fields":[%s]}`, mulQuery, `"GLN_TX_HASH","TX_ID"`)
 	// fmt.Println(queryString)
