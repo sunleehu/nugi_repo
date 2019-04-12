@@ -14,11 +14,11 @@
           }
         },
         {
-            "role": {
-              "name": "member",
-              "mspId": "GintwwOrgMSP"
-            }
+          "role": {
+            "name": "member",
+            "mspId": "GintwwOrgMSP"
           }
+        }
       ],
       "policy": {
         "1-of": [
@@ -36,7 +36,7 @@
     },
     "requiredPeerCount": 1,
     "maxPeerCount": 6,
-    "blockToLive": 100
+    "blockToLive": 100000
   },
   {
     "name": "KOEXKRSICOTH",
@@ -54,11 +54,11 @@
           }
         },
         {
-            "role": {
-              "name": "member",
-              "mspId": "GintwwOrgMSP"
-            }
+          "role": {
+            "name": "member",
+            "mspId": "GintwwOrgMSP"
           }
+        }
       ],
       "policy": {
         "1-of": [
@@ -76,7 +76,7 @@
     },
     "requiredPeerCount": 1,
     "maxPeerCount": 6,
-    "blockToLive": 100
+    "blockToLive": 100000
   },
   {
     "name": "SICOTHTSIBTW",
@@ -94,11 +94,11 @@
           }
         },
         {
-            "role": {
-              "name": "member",
-              "mspId": "GintwwOrgMSP"
-            }
+          "role": {
+            "name": "member",
+            "mspId": "GintwwOrgMSP"
           }
+        }
       ],
       "policy": {
         "1-of": [
@@ -116,6 +116,6 @@
     },
     "requiredPeerCount": 1,
     "maxPeerCount": 6,
-    "blockToLive": 100
+    "blockToLive": 100000
   }
 ]
