@@ -18,6 +18,12 @@
             "name": "member",
             "mspId": "GintwwOrgMSP"
           }
+        },
+        {
+          "role": {
+            "name": "member",
+            "mspId": "EndorserMSP"
+          }
         }
       ],
       "policy": {
@@ -30,6 +36,9 @@
           },
           {
             "signed-by": 2
+          },
+          {
+            "signed-by": 3
           }
         ]
       }
@@ -58,6 +67,12 @@
             "name": "member",
             "mspId": "GintwwOrgMSP"
           }
+        },
+        {
+          "role": {
+            "name": "member",
+            "mspId": "EndorserMSP"
+          }
         }
       ],
       "policy": {
@@ -70,6 +85,9 @@
           },
           {
             "signed-by": 2
+          },
+          {
+            "signed-by": 3
           }
         ]
       }
@@ -98,6 +116,12 @@
             "name": "member",
             "mspId": "GintwwOrgMSP"
           }
+        },
+        {
+          "role": {
+            "name": "member",
+            "mspId": "EndorserMSP"
+          }
         }
       ],
       "policy": {
@@ -110,6 +134,9 @@
           },
           {
             "signed-by": 2
+          },
+          {
+            "signed-by": 3
           }
         ]
       }
