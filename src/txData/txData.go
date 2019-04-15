@@ -227,7 +227,6 @@ func (t *txDataCC) getTxData(stub shim.ChaincodeStubInterface, args []string) pb
 		if err != nil {
 			return shim.Error(errMessage("BCCE0002", "Tx Maker and LclGlnUnqCd does not match"))
 		}
-
 	}
 
 	var hash string
@@ -257,11 +256,11 @@ func (t *txDataCC) getTxData(stub shim.ChaincodeStubInterface, args []string) pb
 		return shim.Error(errMessage("BCCE0003", err))
 	}
 
-	if !(pData.From == qArgs.LcGlnUnqCd || pData.To == qArgs.LcGlnUnqCd) {
-		logger.Info("not match 2")
-		logger.Info(pData, qArgs)
-		return shim.Error(errMessage("BCCE0002", "Tx Maker and LclGlnUnqCd does not match"))
-	}
+	// if len(checkBlank(qArgs.LcGlnUnqCd)) > 0 {
+	// 	if qArgs.LcGlnUnqCd != pData.From && qArgs.LcGlnUnqCd != pData.To {
+	// 		return shim.Error(errMessage("BCCE0002", "Tx Maker and LclGlnUnqCd does not match"))
+	// 	}
+	// }
 	colName := collectionMaker(pData.From, pData.To)
 
 	queryResult, err := stub.GetPrivateData(colName, qArgs.GlnTxNo)
