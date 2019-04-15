@@ -28,6 +28,8 @@ func checkGlnIntl(stub shim.ChaincodeStubInterface) (bool, string) {
 		return false, "Certification Error"
 	}
 
+	logger.Info("ACC_ROLE : ", attr)
+
 	if attr == "INT" {
 		gln = true
 	} else {
