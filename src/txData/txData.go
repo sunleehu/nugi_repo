@@ -122,9 +122,7 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 	// 			return shim.Error(errMessage("BCCE0004", err))
 	// 		}
 	// 		duplList = append(duplList, string(respJSONBytes))
-
 	// 	}
-
 	// 	return shim.Error(errMessage("BCCE0006", fmt.Sprintf("[%s]", strings.Join(duplList, ","))))
 	// }
 

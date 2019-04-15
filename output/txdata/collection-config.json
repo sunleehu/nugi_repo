@@ -36,7 +36,7 @@
     },
     "requiredPeerCount": 1,
     "maxPeerCount": 6,
-    "blockToLive": 100
+    "blockToLive": 1000
   },
   {
     "name": "KOEXKRSICOTH",
@@ -76,7 +76,7 @@
     },
     "requiredPeerCount": 1,
     "maxPeerCount": 6,
-    "blockToLive": 100
+    "blockToLive": 1000
   },
   {
     "name": "SICOTHTSIBTW",
@@ -116,6 +116,6 @@
     },
     "requiredPeerCount": 1,
     "maxPeerCount": 6,
-    "blockToLive": 100
+    "blockToLive": 1000
   }
 ]
