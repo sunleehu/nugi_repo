@@ -258,6 +258,8 @@ func (t *txDataCC) getTxData(stub shim.ChaincodeStubInterface, args []string) pb
 	}
 
 	if !(pData.From == qArgs.LcGlnUnqCd || pData.To == qArgs.LcGlnUnqCd) {
+		logger.Info("not match 2")
+		logger.Info(pData, qArgs)
 		return shim.Error(errMessage("BCCE0002", "Tx Maker and LclGlnUnqCd does not match"))
 	}
 	colName := collectionMaker(pData.From, pData.To)
