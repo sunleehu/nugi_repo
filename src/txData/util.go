@@ -19,7 +19,6 @@ func checkAtoi(str string) bool {
 }
 
 func checkGlnIntl(stub shim.ChaincodeStubInterface) (bool, string) {
-	gln := false
 	attr, exs, err := cid.GetAttributeValue(stub, "ACC_ROLE")
 	if !exs {
 		return false, "Certification does not have Attribute"
@@ -28,12 +27,7 @@ func checkGlnIntl(stub shim.ChaincodeStubInterface) (bool, string) {
 		return false, "Certification Error"
 	}
 
-	if attr == "INT" {
-		gln = true
-	} else {
-		gln = false
-	}
-	return gln, ""
+	return attr == "INT", ""
 }
 
 func isExist(stub shim.ChaincodeStubInterface, queryString string) (bool, []byte, error) {
