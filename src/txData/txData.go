@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"strings"
 
 	"github.com/hyperledger/fabric/core/chaincode/lib/cid"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
@@ -86,7 +85,6 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 	txID := stub.GetTxID()
 	keyMap := make(map[string]string)
 	var keyList []string
-	var duplList []string
 
 	//validation loop
 	for k := 0; k < len(txdata); k++ {
@@ -100,34 +98,33 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 	}
 
 	// Duplicate Value Check in couchDB
-	mulQuery := multiQueryMaker("GLN_TX_HASH", keyList)
-	queryString := fmt.Sprintf(`{"selector":%s, "fields":[%s]}`, mulQuery, `"GLN_TX_HASH","TX_ID"`)
-	fmt.Println(queryString)
+	// var duplList []string
+	// mulQuery := multiQueryMaker("GLN_TX_HASH", keyList)
+	// queryString := fmt.Sprintf(`{"selector":%s, "fields":[%s]}`, mulQuery, `"GLN_TX_HASH","TX_ID"`)
+	// fmt.Println(queryString)
 
-	exs, res, err := isExist(stub, queryString)
-	if err != nil {
-		return shim.Error(errMessage("BCCE0008", err))
-	}
-	if exs {
-		if err != nil {
-			return shim.Error(errMessage("BCCE0008", err))
-		}
-		var qResp []pubData
-		json.Unmarshal(res, &qResp)
-		for j := 0; j < len(qResp); j++ {
-			var respJ respStruct
-			respJ.BcTxID = qResp[j].BcTxID
-			respJ.GlnTxNo = keyMap[qResp[j].GlnTxHash]
-			respJSONBytes, err := json.Marshal(respJ)
-			if err != nil {
-				return shim.Error(errMessage("BCCE0004", err))
-			}
-			duplList = append(duplList, string(respJSONBytes))
-
-		}
-
-		return shim.Error(errMessage("BCCE0006", fmt.Sprintf("[%s]", strings.Join(duplList, ","))))
-	}
+	// exs, res, err := isExist(stub, queryString)
+	// if err != nil {
+	// 	return shim.Error(errMessage("BCCE0008", err))
+	// }
+	// if exs {
+	// 	if err != nil {
+	// 		return shim.Error(errMessage("BCCE0008", err))
+	// 	}
+	// 	var qResp []pubData
+	// 	json.Unmarshal(res, &qResp)
+	// 	for j := 0; j < len(qResp); j++ {
+	// 		var respJ respStruct
+	// 		respJ.BcTxID = qResp[j].BcTxID
+	// 		respJ.GlnTxNo = keyMap[qResp[j].GlnTxHash]
+	// 		respJSONBytes, err := json.Marshal(respJ)
+	// 		if err != nil {
+	// 			return shim.Error(errMessage("BCCE0004", err))
+	// 		}
+	// 		duplList = append(duplList, string(respJSONBytes))
+	// 	}
+	// 	return shim.Error(errMessage("BCCE0006", fmt.Sprintf("[%s]", strings.Join(duplList, ","))))
+	// }
 
 	// Insert Loop
 	for i := 0; i < len(txdata); i++ {
@@ -228,7 +225,6 @@ func (t *txDataCC) getTxData(stub shim.ChaincodeStubInterface, args []string) pb
 		if err != nil {
 			return shim.Error(errMessage("BCCE0002", "Tx Maker and LclGlnUnqCd does not match"))
 		}
-
 	}
 
 	var hash string
@@ -258,9 +254,11 @@ func (t *txDataCC) getTxData(stub shim.ChaincodeStubInterface, args []string) pb
 		return shim.Error(errMessage("BCCE0003", err))
 	}
 
-	if !(pData.From == qArgs.LcGlnUnqCd || pData.To == qArgs.LcGlnUnqCd) {
-		return shim.Error(errMessage("BCCE0002", "Tx Maker and LclGlnUnqCd does not match"))
-	}
+	// if len(checkBlank(qArgs.LcGlnUnqCd)) > 0 {
+	// 	if qArgs.LcGlnUnqCd != pData.From && qArgs.LcGlnUnqCd != pData.To {
+	// 		return shim.Error(errMessage("BCCE0002", "Tx Maker and LclGlnUnqCd does not match"))
+	// 	}
+	// }
 	colName := collectionMaker(pData.From, pData.To)
 
 	queryResult, err := stub.GetPrivateData(colName, qArgs.GlnTxNo)

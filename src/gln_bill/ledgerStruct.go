@@ -7,8 +7,8 @@ type glnbill struct {
 	SndrLocalGlnCd     string `json:"LOCAL_GLN_CD"`
 	AdjSDt             string `json:"ADJ_S_DT"`
 	AdjEDt             string `json:"ADJ_E_DT"`
-	AdjTxCnt           uint64 `json:"ADJ_PBL_TX_CNT"`
-	AdjDt              string `json:"ADJ_PBL_DT"`
+	AdjPblTxCnt        uint64 `json:"ADJ_PBL_TX_CNT"`
+	AdjPblDt           string `json:"ADJ_PBL_DT"`
 	TxPrcpSum          string `json:"TX_PRCP_SUM"`
 	TxPrcpSumSign      string `json:"TX_PRCP_SUM_SIGN"`
 	SndrAdjAmt         string `json:"SNDR_ADJ_AMT"`
@@ -29,7 +29,7 @@ type glnbill struct {
 	SndrAdjDfnYn       string `json:"LOCAL_GLN_ADJ_DFN_YN"`
 	TotalFeeSign       string `json:"TOTAL_FEE_SIGN"`
 	TotalFeeAmount     string `json:"TOTAL_FEE_AMOUNT"`
-	SettlementFileName string `json:"SETTLENMENT_FILE_NAME"`
+	SettlementFileName string `json:"SETTLEMENT_FILE_NAME"`
 	FeeFileName        string `json:"FEE_FILE_NAME"`
 	Txid               string `json:"TX_ID"`
 }

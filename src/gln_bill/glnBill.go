@@ -246,7 +246,7 @@ func (t *glnBillCC) getBillHistory(stub shim.ChaincodeStubInterface, args []stri
 	}
 
 	// Query
-	queryString := fmt.Sprintf(`{"selector": {"$and":[{"LOCAL_GLN_CD": "%s"},{"ADJ_DT":{"$gte": "%s"}},{"ADJ_DT":{"$lte": "%s"}}]}}`, qArgs.LcGlnUnqCd, qArgs.ReqStartTime, qArgs.ReqEndTime)
+	queryString := fmt.Sprintf(`{"selector": {"$and":[{"LOCAL_GLN_CD": "%s"},{"ADJ_PBL_DT":{"$gte": "%s"}},{"ADJ_PBL_DT":{"$lte": "%s"}}]}}`, qArgs.LcGlnUnqCd, qArgs.ReqStartTime, qArgs.ReqEndTime)
 	queryResults, err := getQueryResultForQueryStringWithPagination(stub, queryString, pgs, qArgs.BookMark)
 	if err != nil {
 		return shim.Error(errMessage("BCCE0008", err))
