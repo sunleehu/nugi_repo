@@ -110,20 +110,20 @@ func (t *glnBillCC) putBill(stub shim.ChaincodeStubInterface, args []string) pb.
 	}
 
 	// Duplicate Value Check in couchDB
-	mulQuery := multiQueryMaker("ADJ_PBL_NO", keyList)
-	queryString := fmt.Sprintf(`{"selector":{%s}, "fields":[%s]}`, mulQuery, `"ADJ_PBL_NO","TX_ID"`)
+	// mulQuery := multiQueryMaker("ADJ_PBL_NO", keyList)
+	// queryString := fmt.Sprintf(`{"selector":{%s}, "fields":[%s]}`, mulQuery, `"ADJ_PBL_NO","TX_ID"`)
 
-	fmt.Println(queryString)
-	exs, res, err := isExist(stub, queryString)
-	if err != nil {
-		return shim.Error(errMessage("BCCE0008", err))
-	}
-	if exs {
-		if err != nil {
-			return shim.Error(errMessage("BCCE0008", err))
-		}
-		return shim.Error(errMessage("BCCE0006", fmt.Sprintf("%s", res)))
-	}
+	// fmt.Println(queryString)
+	// exs, res, err := isExist(stub, queryString)
+	// if err != nil {
+	// 	return shim.Error(errMessage("BCCE0008", err))
+	// }
+	// if exs {
+	// 	if err != nil {
+	// 		return shim.Error(errMessage("BCCE0008", err))
+	// 	}
+	// 	return shim.Error(errMessage("BCCE0006", fmt.Sprintf("%s", res)))
+	// }
 
 	// putState loop
 	for i := 0; i < len(validData); i++ {
