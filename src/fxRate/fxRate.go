@@ -402,20 +402,20 @@ func (t *fxRateCC) putXchRate(stub shim.ChaincodeStubInterface, args []string) p
 		validData = append(validData, lcXchJSONBytes)
 	}
 	// Duplicate Value Check in couchDB
-	mulQuery := multiQueryMaker("LOCAL_GLN_XCHR_INF_UNQNO", keyList)
-	queryString := fmt.Sprintf(`{"selector":{%s}, "fields":[%s]}`, mulQuery, `"LOCAL_GLN_XCHR_INF_UNQNO","TX_ID"`)
+	// mulQuery := multiQueryMaker("LOCAL_GLN_XCHR_INF_UNQNO", keyList)
+	// queryString := fmt.Sprintf(`{"selector":{%s}, "fields":[%s]}`, mulQuery, `"LOCAL_GLN_XCHR_INF_UNQNO","TX_ID"`)
 
-	fmt.Println(queryString)
-	exs, res, err := isExist(stub, queryString)
-	if err != nil {
-		return shim.Error(errMessage("BCCE0008", err))
-	}
-	if exs {
-		if err != nil {
-			return shim.Error(errMessage("BCCE0008", err))
-		}
-		return shim.Error(errMessage("BCCE0006", fmt.Sprintf("%s", res)))
-	}
+	// fmt.Println(queryString)
+	// exs, res, err := isExist(stub, queryString)
+	// if err != nil {
+	// 	return shim.Error(errMessage("BCCE0008", err))
+	// }
+	// if exs {
+	// 	if err != nil {
+	// 		return shim.Error(errMessage("BCCE0008", err))
+	// 	}
+	// 	return shim.Error(errMessage("BCCE0006", fmt.Sprintf("%s", res)))
+	// }
 
 	for i := 0; i < len(validData); i++ {
 		// Write Ledger Local GLN Exchange rate Info
