@@ -1,6 +1,0 @@
-{"index": {
-    "fields":[{"NAT_CD":"desc"}]
-} ,
-"name": "NAT_CD",
-"ddoc": "NAT_CDQueryDoc",
-"type":"json"}
