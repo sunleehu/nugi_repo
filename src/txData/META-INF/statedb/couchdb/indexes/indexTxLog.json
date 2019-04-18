@@ -1,5 +1,5 @@
 {"index": {
-    "fields":[{"GLN_TX_HASH":"desc"}]
+    "fields":["GLN_TX_HASH"]
 } ,
 "name": "selectQuery",
 "ddoc": "selectQueryDoc",

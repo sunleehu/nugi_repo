@@ -1,0 +1,121 @@
+[{
+    "name": "KOEXKRTSIBTW",
+    "policy": {
+      "identities": [{
+          "role": {
+            "name": "member",
+            "mspId": "KoexkrOrgMSP"
+          }
+        },
+        {
+          "role": {
+            "name": "member",
+            "mspId": "TsibtwOrgMSP"
+          }
+        },
+        {
+          "role": {
+            "name": "member",
+            "mspId": "GintwwOrgMSP"
+          }
+        }
+      ],
+      "policy": {
+        "1-of": [
+          {
+            "signed-by": 0
+          },
+          {
+            "signed-by": 1
+          },
+          {
+            "signed-by": 2
+          }
+        ]
+      }
+    },
+    "requiredPeerCount": 1,
+    "maxPeerCount": 6,
+    "blockToLive": 100
+  },
+  {
+    "name": "KOEXKRSICOTH",
+    "policy": {
+      "identities": [{
+          "role": {
+            "name": "member",
+            "mspId": "KoexkrOrgMSP"
+          }
+        },
+        {
+          "role": {
+            "name": "member",
+            "mspId": "SicothOrgMSP"
+          }
+        },
+        {
+          "role": {
+            "name": "member",
+            "mspId": "GintwwOrgMSP"
+          }
+        }
+      ],
+      "policy": {
+        "1-of": [
+          {
+            "signed-by": 0
+          },
+          {
+            "signed-by": 1
+          },
+          {
+            "signed-by": 2
+          }
+        ]
+      }
+    },
+    "requiredPeerCount": 1,
+    "maxPeerCount": 6,
+    "blockToLive": 100
+  },
+  {
+    "name": "SICOTHTSIBTW",
+    "policy": {
+      "identities": [{
+          "role": {
+            "name": "member",
+            "mspId": "SicothOrgMSP"
+          }
+        },
+        {
+          "role": {
+            "name": "member",
+            "mspId": "TsibtwOrgMSP"
+          }
+        },
+        {
+          "role": {
+            "name": "member",
+            "mspId": "GintwwOrgMSP"
+          }
+        }
+      ],
+      "policy": {
+        "1-of": [
+          {
+            "signed-by": 0
+          },
+          {
+            "signed-by": 1
+          },
+          {
+            "signed-by": 2
+          }
+        ]
+      }
+    },
+    "requiredPeerCount": 1,
+    "maxPeerCount": 6,
+    "blockToLive": 100
+  }
+]
