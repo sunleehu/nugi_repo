@@ -45,6 +45,7 @@ func (t *txDataCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return t.getTxData(stub, args)
 	} else if function == "gettxdatahistory" {
 		return t.getTxDataHistory(stub, args)
+	}
 	// } else if function == "setLogLevel" {
 	// 	return setLogLevel(args[0])
 	// }

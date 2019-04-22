@@ -18,7 +18,7 @@
 	"policy": {
 		"2-of": [
 			{ "signed-by": 0},
-			{ "1-of": [{ "signed-by": 1 }, { "signed-by": 2 }, { "signed-by": 3 }]}
+			{ "1-of": [{ "signed-by": 1 }, { "signed-by": 2 }]}
 		  ]
 	}
 }

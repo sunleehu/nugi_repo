@@ -428,7 +428,6 @@ func (t *fxRateCC) putXchRate(stub shim.ChaincodeStubInterface, args []string) p
 		}
 	}
 	logger.Info("Insert Complete")
-	logger.Debug("Saved Data : ", string(validData))
 
 	return shim.Success(nil)
 }
