@@ -20,12 +20,13 @@ type glnBillCC struct {
 
 var pageSize int32 = 100
 
-var logger = shim.NewLogger("gln_billChaincode")
+var logger = shim.NewLogger("STTLBILL")
 
 func main() {
 	err := shim.Start(new(glnBillCC))
 	if err != nil {
-		fmt.Printf("Error starting setlLog chaincode: %s", err)
+		//fmt.Printf("Error starting setlLog chaincode: %s", err)
+		logger.Error("Error starting sttlbill chaincode : ", err)
 	}
 }
 
@@ -36,6 +37,7 @@ func (t *glnBillCC) Init(stub shim.ChaincodeStubInterface) pb.Response {
 func (t *glnBillCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	function, args := stub.GetFunctionAndParameters()
 	logger.Info("Invoke is running", function)
+	logger.Info("Args: ", args)
 
 	//  Handle different functions
 	if function == "putsttlbill" {
@@ -113,7 +115,7 @@ func (t *glnBillCC) putBill(stub shim.ChaincodeStubInterface, args []string) pb.
 	mulQuery := multiQueryMaker("ADJ_PBL_NO", keyList)
 	queryString := fmt.Sprintf(`{"selector":{%s}, "fields":[%s]}`, mulQuery, `"ADJ_PBL_NO","TX_ID"`)
 
-	fmt.Println(queryString)
+	logger.Debug(queryString)
 	exs, res, err := isExist(stub, queryString)
 	if err != nil {
 		return shim.Error(errMessage("BCCE0008", err))

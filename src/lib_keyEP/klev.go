@@ -6,7 +6,6 @@ package main
  */
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	"github.com/hyperledger/fabric/core/chaincode/shim/ext/statebased"
@@ -16,12 +15,13 @@ import (
 type libKlvCC struct {
 }
 
-var logger = shim.NewLogger("libKlvCC")
+var logger = shim.NewLogger("LIBEP")
 
 func main() {
 	err := shim.Start(new(libKlvCC))
 	if err != nil {
-		fmt.Printf("Error starting endorse chaincode: %s", err)
+		//fmt.Printf("Error starting endorse chaincode: %s", err)
+		logger.Error("Error starting libep chaincode : ", err)
 	}
 }
 
@@ -32,10 +32,11 @@ func (t *libKlvCC) Init(stub shim.ChaincodeStubInterface) pb.Response {
 
 func (t *libKlvCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	function, args := stub.GetFunctionAndParameters()
-	// fmt.Println("invoke is running " + function)
-	logger = shim.NewLogger("CC:libKlvCC TX:" + stub.GetTxID())
-	logger.Infof("Invoke is running %s", function)
+	//logger = shim.NewLogger("CC:libKlvCC TX:" + stub.GetTxID())
+	//logger.Infof("Invoke is running %s", function)
 	// Handle different functions
+	logger.Info("Invoke is running", function)
+	logger.Info("Args: ", args)
 
 	//args[0] = epBytes
 	//args[1:]... = "Org1MSP","Org2MSP"
@@ -47,52 +48,45 @@ func (t *libKlvCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return listOrgs(stub, args)
 	}
 
-	fmt.Println("could not find func: " + function) //error
-	errObj := errMessage("BCCE0001", "Received unknown function invocation "+function)
-
-	return shim.Error(errObj)
+	errM := errMessage("BCCE0001", "Received unknown function invocation "+function)
+	return shim.Error(errM)
 }
 
 func addOrgs(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	logger.Info("addOrgs()")
+
 	epBytes := []byte(args[0])
-	fmt.Println("EP Bytes", epBytes)
+	logger.Debug("EP Bytes", epBytes)
+	logger.Debug("Org List", args[1:])
 
 	ep, err := statebased.NewStateEP(epBytes)
-
-	fmt.Println("EP ", ep)
 	if err != nil {
 		logger.Error(err)
 		return shim.Error(err.Error())
 	}
-
-	fmt.Println("addorgs")
+	logger.Debug("EP ", ep)
 
 	err = ep.AddOrgs(statebased.RoleTypeMember, args[1:]...)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 
-	fmt.Println("Org List", args[1:])
-
 	epBytes, err = ep.Policy()
-
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	fmt.Println(epBytes)
-
+	logger.Debug("Policy Results : ", epBytes)
 	return shim.Success(epBytes)
-
 }
 
 // delOrgs removes the list of MSP IDs from the invocation parameters
 // from the state's endorsement policy
 func delOrgs(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	logger.Info("delOrgs()")
 
 	// get the endorsement policy for the key
 	epBytes := []byte(args[0])
 	var err error
-
 	ep, err := statebased.NewStateEP(epBytes)
 	if err != nil {
 		return shim.Error(err.Error())
@@ -113,6 +107,7 @@ func delOrgs(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 // listOrgs returns the list of organizations currently part of
 // the state's endorsement policy
 func listOrgs(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	logger.Info("listOrgs()")
 
 	// get the endorsement policy for the key
 	epBytes := []byte(args[0])

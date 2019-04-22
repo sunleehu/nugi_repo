@@ -19,14 +19,15 @@ type fxRateCC struct {
 }
 
 // Logger
-var logger = shim.NewLogger("fxRateCC")
+var logger = shim.NewLogger("FXRATE")
 
 var pageSize int32 = 100
 
 func main() {
 	err := shim.Start(new(fxRateCC))
 	if err != nil {
-		fmt.Printf("Error starting exRate chaincode: %s", err)
+		//fmt.Printf("Error starting exRate chaincode: %s", err)
+		logger.Error("Error starting fxrate chaincode : ", err)
 	}
 }
 
@@ -39,6 +40,7 @@ func (t *fxRateCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	function, args := stub.GetFunctionAndParameters()
 	// fmt.Println("invoke is running " + function)
 	logger.Info("Invoke is running", function)
+	logger.Info("Args: ", args)
 
 	// Handle different functions
 	if function == "putxchrate" {
@@ -424,9 +426,10 @@ func (t *fxRateCC) putXchRate(stub shim.ChaincodeStubInterface, args []string) p
 		if err != nil {
 			return shim.Error(errMessage("BCCE0010", err))
 		}
-		logger.Info("Insert Complete")
-
 	}
+	logger.Info("Insert Complete")
+	logger.Debug("Saved Data : ", string(validData))
+
 	return shim.Success(nil)
 }
 
