@@ -1,8 +1,0 @@
-{
-    "index": {
-    "fields":["SndrLcGlnUnqCd"]
-},
-"name": "SndrLcGlnUnqCd-index",
-"ddoc": "SndrLcGlnUnqCdQueryDoc",
-"type":"json"
-}

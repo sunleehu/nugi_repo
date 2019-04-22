@@ -1,8 +1,0 @@
-{
-    "index": {
-    "fields":["RCVR_LC_GLN_UNQ_CD"]
-},
-"name": "RCVR_LC_GLN_UNQ_CD-index",
-"ddoc": "RCVR_LC_GLN_UNQ_CDQueryDoc",
-"type":"json"
-}
