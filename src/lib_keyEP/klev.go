@@ -53,8 +53,6 @@ func (t *libKlvCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 }
 
 func addOrgs(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	logger.Info("addOrgs()")
-
 	epBytes := []byte(args[0])
 	logger.Debug("EP Bytes", epBytes)
 	logger.Debug("Org List", args[1:])
@@ -82,7 +80,6 @@ func addOrgs(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 // delOrgs removes the list of MSP IDs from the invocation parameters
 // from the state's endorsement policy
 func delOrgs(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	logger.Info("delOrgs()")
 
 	// get the endorsement policy for the key
 	epBytes := []byte(args[0])
@@ -107,7 +104,6 @@ func delOrgs(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 // listOrgs returns the list of organizations currently part of
 // the state's endorsement policy
 func listOrgs(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	logger.Info("listOrgs()")
 
 	// get the endorsement policy for the key
 	epBytes := []byte(args[0])
