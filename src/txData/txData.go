@@ -26,6 +26,8 @@ func main() {
 	err := shim.Start(new(txDataCC))
 	if err != nil {
 		fmt.Printf("Error starting txData chaincode: %s", err)
+	} else {
+		setLogLevel("DEBUG")
 	}
 }
 
@@ -66,7 +68,8 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 		return shim.Error(errMessage("BCCE0002", "This function Only for INT GLN"))
 	}
 
-	fmt.Println(string(privData["args"]))
+	//fmt.Println(string(privData["args"]))
+	logger.Debug("transient args : ", string(privData["args"]))
 
 	var txdata []transaction
 
