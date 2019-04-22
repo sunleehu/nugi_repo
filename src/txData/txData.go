@@ -26,8 +26,6 @@ func main() {
 	err := shim.Start(new(txDataCC))
 	if err != nil {
 		fmt.Printf("Error starting txData chaincode: %s", err)
-	} else {
-		setLogLevel("DEBUG")
 	}
 }
 
@@ -38,7 +36,7 @@ func (t *txDataCC) Init(stub shim.ChaincodeStubInterface) pb.Response {
 func (t *txDataCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	function, args := stub.GetFunctionAndParameters()
 	logger.Info("Invoke is running", function)
-	fmt.Println("args:", args)
+	logger.Info("Args: ", args)
 	// Handle different functions
 	if function == "puttxdata" {
 		return t.putTxData(stub, args)
@@ -69,7 +67,7 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 	}
 
 	//fmt.Println(string(privData["args"]))
-	logger.Debug("transient args : ", string(privData["args"]))
+	logger.Debug("Transient Args : ", string(privData["args"]))
 
 	var txdata []transaction
 
