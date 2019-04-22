@@ -16,7 +16,7 @@ import (
 	pb "github.com/hyperledger/fabric/protos/peer"
 )
 
-var logger = shim.NewLogger("txDataChaincode")
+var logger = shim.NewLogger("TXDATA")
 var pageSize int32 = 100
 
 type txDataCC struct {
@@ -25,7 +25,8 @@ type txDataCC struct {
 func main() {
 	err := shim.Start(new(txDataCC))
 	if err != nil {
-		fmt.Printf("Error starting txData chaincode: %s", err)
+		//fmt.Printf("Error starting txData chaincode: %s", err)
+		logger.Error("Error starting txdata chaincode : ", err)
 	}
 }
 
@@ -36,7 +37,7 @@ func (t *txDataCC) Init(stub shim.ChaincodeStubInterface) pb.Response {
 func (t *txDataCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	function, args := stub.GetFunctionAndParameters()
 	logger.Info("Invoke is running", function)
-	fmt.Println("args:", args)
+	logger.Info("Args: ", args)
 	// Handle different functions
 	if function == "puttxdata" {
 		return t.putTxData(stub, args)
@@ -44,9 +45,10 @@ func (t *txDataCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return t.getTxData(stub, args)
 	} else if function == "gettxdatahistory" {
 		return t.getTxDataHistory(stub, args)
-	} else if function == "setLogLevel" {
-		return setLogLevel(args[0])
 	}
+	// } else if function == "setLogLevel" {
+	// 	return setLogLevel(args[0])
+	// }
 	//else if function == "updateTxLog" {
 	// 	return t.updateTxLog(stub, args)
 	// }
@@ -66,7 +68,8 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 		return shim.Error(errMessage("BCCE0002", "This function Only for INT GLN"))
 	}
 
-	fmt.Println(string(privData["args"]))
+	//fmt.Println(string(privData["args"]))
+	logger.Debug("Transient Args : ", string(privData["args"]))
 
 	var txdata []transaction
 
@@ -191,7 +194,7 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 		}
 
 		logger.Info("TRANSACTION_DATA_SAVED")
-		logger.Debug("TRANSACTION_DATA_SAVED", string(dat))
+		logger.Debug("SAVED_DATA : ", string(dat))
 		// EVENT!!!
 		stub.SetEvent("TRANSACTION_DATA_SAVED", dat)
 
