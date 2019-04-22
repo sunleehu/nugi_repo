@@ -1,6 +1,0 @@
-{"index": {
-    "fields":[{"GLN_FX_NO":"desc"}]
-} ,
-"name": "GLN_FX_NO",
-"ddoc": "GLN_FX_NOQueryDoc",
-"type":"json"}
