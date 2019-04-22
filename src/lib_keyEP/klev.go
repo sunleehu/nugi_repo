@@ -54,15 +54,15 @@ func (t *libKlvCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 func addOrgs(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	epBytes := []byte(args[0])
-	logger.Debug("EP Bytes", epBytes)
-	logger.Debug("Org List", args[1:])
+	//logger.Debug("EP Bytes : ", epBytes)
+	//logger.Debug("Org List : ", args[1:])
 
 	ep, err := statebased.NewStateEP(epBytes)
 	if err != nil {
 		logger.Error(err)
 		return shim.Error(err.Error())
 	}
-	logger.Debug("EP ", ep)
+	//logger.Debug("EP : ", ep)
 
 	err = ep.AddOrgs(statebased.RoleTypeMember, args[1:]...)
 	if err != nil {
