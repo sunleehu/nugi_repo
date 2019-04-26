@@ -39,6 +39,46 @@
     "maxPeerCount": 3,
     "blockToLive": 1000,
     "memberOnlyRead": true
+  },
+  {
+    "name": "KOEXKRTSIBTW",
+    "policy": {
+      "identities": [{
+          "role": {
+            "name": "member",
+            "mspId": "KoexkrOrgMSP"
+          }
+        },
+        {
+          "role": {
+            "name": "member",
+            "mspId": "TsibtwOrgMSP"
+          }
+        },
+        {
+          "role": {
+            "name": "member",
+            "mspId": "GintwwOrgMSP"
+          }
+        }
+      ],
+      "policy": {
+        "1-of": [
+          {
+            "signed-by": 0
+          },
+          {
+            "signed-by": 1
+          },
+          {
+            "signed-by": 2
+          }
+        ]
+      }
+    },
+    "requiredPeerCount": 1,
+    "maxPeerCount": 3,
+    "blockToLive": 1000
   }
 ]
  
