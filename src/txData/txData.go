@@ -173,7 +173,7 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 		if err != nil {
 			return shim.Error(errMessage("BCCE0004", err))
 		}
-		err = stub.PutPrivateData(colName, txdata[i].GlnTxHash, txlogJSONBytes)
+		err = stub.PutPrivateData(colName, hash, txlogJSONBytes)
 		if err != nil {
 			return shim.Error(errMessage("BCCE0009", err))
 		}
