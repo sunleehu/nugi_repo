@@ -1,6 +1,0 @@
-{"index": {
-    "fields":[{"LOCAL_GLN_XCHR_INF_UNQNO":"desc"}]
-} ,
-"name": "XCHR_INF_UNQNO",
-"ddoc": "GLN_FX_NOQueryDoc",
-"type":"json"}

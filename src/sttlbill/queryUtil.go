@@ -107,16 +107,41 @@ func addPaginationMetadataToQueryResults(buffer *bytes.Buffer, responseMetadata 
 	return buffer
 }
 
-func multiQueryMaker(key string, data []string) string {
-	var selectKey string
-	comma := false
-	for i := 0; i < len(data); i++ {
-		if comma {
-			selectKey = selectKey + ", "
+// $or 는 Full Query 이므로 성능저하 가능성 있음
+// func multiQueryMaker(key string, data []string) string {
+// 	var selectKey string
+// 	comma := false
+// 	for i := 0; i < len(data); i++ {
+// 		if comma {
+// 			selectKey = selectKey + ", "
+// 		}
+// 		selectKey = selectKey + fmt.Sprintf(`{"%s":"%s"}`, key, data[i])
+// 		comma = true
+// 	}
+// 	selector := fmt.Sprintf(`"$or":[%s]`, selectKey)
+// 	return selector
+// }
+
+func queryResponseStructMaker(result [][]byte, bookmark string, recordCnt int32) []byte {
+	var buffer bytes.Buffer
+	buffer.WriteString("{\"BC_RES_DATA\":[")
+	bArrayMemberAlreadyWritten := false
+	for i := 0; i < len(result); i++ {
+		// Add a comma before array members, suppress it for the first array member
+		if bArrayMemberAlreadyWritten == true {
+			buffer.WriteString(",")
 		}
-		selectKey = selectKey + fmt.Sprintf(`{"%s":"%s"}`, key, data[i])
-		comma = true
+		buffer.Write(result[i])
+		bArrayMemberAlreadyWritten = true
 	}
-	selector := fmt.Sprintf(`"$or":[%s]`, selectKey)
-	return selector
+	buffer.WriteString("],")
+	buffer.WriteString("\"PAGE_NEXT_ID\":")
+	buffer.WriteString("\"")
+	buffer.WriteString(bookmark)
+	buffer.WriteString("\",")
+	buffer.WriteString("\"PAGE_COUNT\":")
+	buffer.WriteString(fmt.Sprintf("%v", recordCnt))
+	buffer.WriteString("}")
+
+	return buffer.Bytes()
 }

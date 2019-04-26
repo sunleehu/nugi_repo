@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/shopspring/decimal"
-
-	"github.com/hyperledger/fabric/core/chaincode/shim"
 )
 
 func checkAtoi(str string) bool {
@@ -19,21 +17,21 @@ func checkAtoi(str string) bool {
 	return false
 }
 
-func isExist(stub shim.ChaincodeStubInterface, queryString string) (bool, []byte, error) {
-	existence := false
-	queryResults, err := getQueryResultForQueryString(stub, queryString)
-	if err != nil {
-		return false, nil, err
-	}
+// func isExist(stub shim.ChaincodeStubInterface, queryString string) (bool, []byte, error) {
+// 	existence := false
+// 	queryResults, err := getQueryResultForQueryString(stub, queryString)
+// 	if err != nil {
+// 		return false, nil, err
+// 	}
 
-	if len(string(queryResults)) > 2 {
-		existence = true
-	}
-	return existence, queryResults, nil
-}
+// 	if len(string(queryResults)) > 2 {
+// 		existence = true
+// 	}
+// 	return existence, queryResults, nil
+// }
 
-func checkBlank(str string) string {
-	return strings.TrimSpace(str)
+func isBlank(str string) bool {
+	return strings.TrimSpace(str) == ""
 }
 
 func getTimestamp(seconds int64) string {

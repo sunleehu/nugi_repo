@@ -43,9 +43,9 @@ type feeList struct {
 
 type pubData struct {
 	GlnTxHash string `json:"GLN_TX_HASH"` // GLN 거래 번호 HASH
+	Date      string `json:"DATE"`        // 거래일시
 	From      string `json:"FROM"`        // Sender
 	To        string `json:"TO"`          // Receiver
-	Date      string `json:"DATE"`        // 거래일시
 	BcTxID    string `json:"TX_ID"`       // 블록체인 TX ID
 }
 
@@ -57,7 +57,6 @@ type respStruct struct {
 // Query JSON struct
 type queryArgs struct {
 	GlnTxNo      string `json:"GLN_TX_NO"`      // GLN 거래
-	GlnTxHash    string `json:"GLN_TX_HASH"`    // GLN 거래 번호 HASH
 	ReqStartTime string `json:"REQ_START_TIME"` // 기간 시작값
 	ReqEndTime   string `json:"REQ_END_TIME"`   // 기간 끝 값
 	LcGlnUnqCd   string `json:"LOCALGLN_CODE"`  // Local GLN 코드

@@ -1,0 +1,8 @@
+{
+    "index": {
+        "fields":[{"ADJ_PBL_DT":"desc"}]
+    },
+    "name": "indexDate",
+    "ddoc": "indexDateDoc",
+    "type": "json"
+}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"strconv"
 	"strings"
 
@@ -33,21 +34,43 @@ func checkGlnIntl(stub shim.ChaincodeStubInterface) (bool, string) {
 	return gln, ""
 }
 
-func isExist(stub shim.ChaincodeStubInterface, queryString string) (bool, []byte, error) {
-	existence := false
-	queryResults, err := getQueryResultForQueryString(stub, queryString)
-	if err != nil {
-		return false, nil, err
-	}
+// func isExist(stub shim.ChaincodeStubInterface, queryString string) (bool, []byte, error) {
+// 	existence := false
+// 	queryResults, err := getQueryResultForQueryString(stub, queryString)
+// 	if err != nil {
+// 		return false, nil, err
+// 	}
 
-	if len(string(queryResults)) > 2 {
-		existence = true
+// 	if len(string(queryResults)) > 2 {
+// 		existence = true
+// 	}
+// 	return existence, queryResults, nil
+// }
+
+func isExistByKey(stub shim.ChaincodeStubInterface, keys []string) (bool, []byte, error) {
+	var buffer bytes.Buffer
+	buffer.WriteString("[")
+
+	existence := false
+	for i := 0; i < len(keys); i++ {
+		data, err := stub.GetState(keys[i])
+		if err != nil {
+			return false, nil, err
+		}
+		if data != nil {
+			if existence == true {
+				buffer.WriteString(",")
+			}
+			buffer.WriteString(string(data))
+			existence = true
+		}
 	}
-	return existence, queryResults, nil
+	buffer.WriteString("]")
+	return existence, buffer.Bytes(), nil
 }
 
-func checkBlank(str string) string {
-	return strings.TrimSpace(str)
+func isBlank(str string) bool {
+	return strings.TrimSpace(str) == ""
 }
 
 func rmvDupVal(arr []string) []string {
