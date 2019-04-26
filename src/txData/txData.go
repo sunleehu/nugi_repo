@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/hyperledger/fabric/core/chaincode/lib/cid"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
@@ -17,7 +18,7 @@ import (
 )
 
 var logger = shim.NewLogger("TXDATA")
-var pageSize int32 = 100
+var DEFAULT_PAGE_SIZE int32 = 100
 
 type txDataCC struct {
 }
@@ -25,8 +26,7 @@ type txDataCC struct {
 func main() {
 	err := shim.Start(new(txDataCC))
 	if err != nil {
-		//fmt.Printf("Error starting txData chaincode: %s", err)
-		logger.Error("Error starting txdata chaincode : ", err)
+		logger.Error("Error starting txdata chaincode : %s", err)
 	}
 }
 
@@ -38,6 +38,7 @@ func (t *txDataCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	function, args := stub.GetFunctionAndParameters()
 	logger.Info("Invoke is running", function)
 	logger.Info("Args: ", args)
+
 	// Handle different functions
 	if function == "puttxdata" {
 		return t.putTxData(stub, args)
@@ -52,60 +53,59 @@ func (t *txDataCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	//else if function == "updateTxLog" {
 	// 	return t.updateTxLog(stub, args)
 	// }
-	errM := errMessage("BCCE0001", "Received unknown function invocation "+function)
-	return shim.Error(errM)
+
+	return shim.Error(errMessage("BCCE0001", "Received unknown function invocation "+function))
 }
 
 // This Function Performs insertions and Generating settlement start event. Called by International GLN
 func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+
+	// Check arguments
 	privData, err := stub.GetTransient()
 	if err != nil {
 		return shim.Error(errMessage("BCCE0005", "GET transient Data Error"))
 	}
+	logger.Debug("Transient Args : ", string(privData["args"]))
+	var txdata []transaction
+	err = json.Unmarshal(privData["args"], &txdata)
+	if err != nil {
+		return shim.Error(errMessage("BCCE0003", err))
+	}
+	if len(txdata) < 1 {
+		return shim.Error(errMessage("BCCE0007", "Args are empty"))
+	}
+
 	// Check Identity
 	err = cid.AssertAttributeValue(stub, "ACC_ROLE", "INT")
 	if err != nil {
 		return shim.Error(errMessage("BCCE0002", "This function Only for INT GLN"))
 	}
 
-	//fmt.Println(string(privData["args"]))
-	logger.Debug("Transient Args : ", string(privData["args"]))
-
-	var txdata []transaction
-
-	err = json.Unmarshal(privData["args"], &txdata)
-	if err != nil {
-		return shim.Error(errMessage("BCCE0003", err))
-	}
-
-	if len(txdata) < 1 {
-		return shim.Error(errMessage("BCCE0007", "Args are empty"))
-	}
 	//event payload data map,
 	evtMap := make(map[string][]string)
 	var pyld hEvt
 	evtCheck := false
 	txID := stub.GetTxID()
-	keyMap := make(map[string]string)
-	var keyList []string
+	// keyMap := make(map[string]string)
+	// var keyList []string
 
 	//validation loop
-	for k := 0; k < len(txdata); k++ {
-		// Empty Value Check
-		if len(checkBlank(txdata[k].GlnTxNo)) == 0 {
-			return shim.Error(errMessage("BCCE0005", "Check GLN_TX_NO in JSON"))
-		}
-		hash := sha256Hash(txdata[k].GlnTxNo)
-		keyMap[hash] = txdata[k].GlnTxNo
-		keyList = append(keyList, hash)
-	}
+	// for k := 0; k < len(txdata); k++ {
+	// 	// Empty Value Check
+	// 	if len(checkBlank(txdata[k].GlnTxNo)) == 0 {
+	// 		return shim.Error(errMessage("BCCE0005", "Check GLN_TX_NO in JSON"))
+	// 	}
+
+	// 	// hash := sha256Hash(txdata[k].GlnTxNo)
+	// 	// keyMap[hash] = txdata[k].GlnTxNo
+	// 	// keyList = append(keyList, hash)
+	// }
 
 	// Duplicate Value Check in couchDB
 	// var duplList []string
 	// mulQuery := multiQueryMaker("GLN_TX_HASH", keyList)
 	// queryString := fmt.Sprintf(`{"selector":%s, "fields":[%s]}`, mulQuery, `"GLN_TX_HASH","TX_ID"`)
 	// fmt.Println(queryString)
-
 	// exs, res, err := isExist(stub, queryString)
 	// if err != nil {
 	// 	return shim.Error(errMessage("BCCE0008", err))
@@ -131,48 +131,49 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 
 	// Insert Loop
 	for i := 0; i < len(txdata); i++ {
-		pData := new(pubData)
-		hash := sha256Hash(txdata[i].GlnTxNo)
-		txdata[i].GlnTxHash = hash
-		pData.BcTxID = txID
-		txdata[i].TxID = txID
 
-		// Json Encoding
-		txlogJSONBytes, err := json.Marshal(txdata[i])
-		if err != nil {
-			return shim.Error(errMessage("BCCE0004", err))
+		// Value Check
+		if isBlank(txdata[i].GlnTxNo) {
+			return shim.Error(errMessage("BCCE0007", "Check GLN_TX_NO in JSON"))
 		}
-		// Duplicate Value Check in couchDB
-		if len(checkBlank(txdata[i].UtcTxDtm)) != 14 || checkAtoi(txdata[i].UtcTxDtm) {
+		if len(strings.TrimSpace(txdata[i].UtcTxDtm)) != 14 || checkAtoi(txdata[i].UtcTxDtm) {
 			return shim.Error(errMessage("BCCE0007", `You should fill out date data "YYYYMMDDhhmmss"`))
 		}
+		if len(strings.TrimSpace(txdata[i].SndrLocalGlnCd)) != 6 || len(strings.TrimSpace(txdata[i].RcvrLocalGlnCd)) != 6 {
+			return shim.Error(errMessage("BCCE0007", "Check GLN_TX_NO in JSON"))
+		}
 
+		hash := sha256Hash(txdata[i].GlnTxNo)
+		txdata[i].GlnTxHash = hash
+		txdata[i].TxID = txID
+
+		// Make collection name
+		colName := collectionMaker(txdata[i].SndrLocalGlnCd, txdata[i].RcvrLocalGlnCd)
+
+		// Public data
+		pData := new(pubData)
 		pData.GlnTxHash = hash
+		pData.Date = txdata[i].UtcTxDtm
 		pData.From = txdata[i].SndrLocalGlnCd
 		pData.To = txdata[i].RcvrLocalGlnCd
-		pData.Date = txdata[i].UtcTxDtm
-
+		pData.BcTxID = txdata[i].TxID
 		pdd, err := json.Marshal(pData)
 		if err != nil {
 			return shim.Error(errMessage("BCCE0004", err))
 		}
 
-		// Write couchDB
+		// Write public data
 		err = stub.PutState(hash, pdd)
 		if err != nil {
 			return shim.Error(errMessage("BCCE0009", err))
 		}
 
-		// Due to collection name error
-		// if len(checkBlank(txdata[i].SndrLocalGlnCd)) != 6 || len(checkBlank(txdata[i].RcvrLocalGlnCd)) != 6 {
-		// 	return shim.Error(errMessage("BCCE0005", "Check GLN_TX_NO in JSON"))
-		// }
-
-		// collection name sorting
-		colName := collectionMaker(txdata[i].SndrLocalGlnCd, txdata[i].RcvrLocalGlnCd)
-
-		// Write couchDB
-		err = stub.PutPrivateData(colName, txdata[i].GlnTxNo, txlogJSONBytes)
+		// Write private data
+		txlogJSONBytes, err := json.Marshal(txdata[i])
+		if err != nil {
+			return shim.Error(errMessage("BCCE0004", err))
+		}
+		err = stub.PutPrivateData(colName, txdata[i].GlnTxHash, txlogJSONBytes)
 		if err != nil {
 			return shim.Error(errMessage("BCCE0009", err))
 		}
@@ -188,7 +189,6 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 		pyld.Target = rmvDupVal(pyld.Target)
 		pyld.Data = evtMap
 		dat, e := json.Marshal(pyld)
-
 		if e != nil {
 			return shim.Error(errMessage("BCCE0004", e))
 		}
@@ -197,7 +197,6 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 		logger.Debug("SAVED_DATA : ", string(dat))
 		// EVENT!!!
 		stub.SetEvent("TRANSACTION_DATA_SAVED", dat)
-
 	}
 
 	logger.Info("Insert Complete")
@@ -206,11 +205,12 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 
 // This Function Performs Query. called by International GLN
 func (t *txDataCC) getTxData(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+
+	// Check arguments
 	var qArgs queryArgs
 	if len(args) < 1 {
 		return shim.Error(errMessage("BCCE0007", "empty args"))
 	}
-	// Json Decoding
 	err := json.Unmarshal([]byte(args[0]), &qArgs)
 	if err != nil {
 		return shim.Error(errMessage("BCCE0003", err))
@@ -226,32 +226,28 @@ func (t *txDataCC) getTxData(stub shim.ChaincodeStubInterface, args []string) pb
 	} else {
 		err = cid.AssertAttributeValue(stub, "LCL_UNQ_CD", qArgs.LcGlnUnqCd)
 		if err != nil {
-			return shim.Error(errMessage("BCCE0002", "Tx Maker and LclGlnUnqCd does not match"))
+			return shim.Error(errMessage("BCCE0002", "Tx Maker and LOCALGLN_CODE does not match"))
 		}
 	}
 
-	var hash string
 	// Empty Value Check
-	if len(checkBlank(qArgs.GlnTxNo)) > 0 {
-		hash = sha256Hash(qArgs.GlnTxNo)
-	} else if len(checkBlank(qArgs.GlnTxHash)) == 64 {
-		hash = qArgs.GlnTxHash
-	} else {
+	var hash string
+	if isBlank(qArgs.GlnTxNo) {
 		return t.getTxDataHistory(stub, args)
+	} else {
+		hash = sha256Hash(qArgs.GlnTxNo)
 	}
 
 	pubQueryRes, err := stub.GetState(hash)
-
 	if err != nil {
 		return shim.Error(errMessage("BCCE0008", err))
 	}
-	if len(pubQueryRes) < 2 {
+	if pubQueryRes == nil {
 		resp := queryResponseStructMaker(nil, "", 0)
 		return shim.Success(resp)
 	}
 
 	var pData pubData
-
 	err = json.Unmarshal(pubQueryRes, &pData)
 	if err != nil {
 		return shim.Error(errMessage("BCCE0003", err))
@@ -262,16 +258,20 @@ func (t *txDataCC) getTxData(stub shim.ChaincodeStubInterface, args []string) pb
 	// 		return shim.Error(errMessage("BCCE0002", "Tx Maker and LclGlnUnqCd does not match"))
 	// 	}
 	// }
+
 	colName := collectionMaker(pData.From, pData.To)
-
-	queryResult, err := stub.GetPrivateData(colName, qArgs.GlnTxNo)
-	var resList [][]byte
-	resList = append(resList, queryResult)
-	result := queryResponseStructMaker(resList, "", 1)
-
+	queryResult, err := stub.GetPrivateData(colName, hash)
 	if err != nil {
 		return shim.Error(errMessage("BCCE0008", err))
 	}
+	if queryResult == nil {
+		resp := queryResponseStructMaker(nil, "", 0)
+		return shim.Success(resp)
+	}
+
+	var resList [][]byte
+	resList = append(resList, queryResult)
+	result := queryResponseStructMaker(resList, "", 1)
 
 	logger.Info("Query Success")
 	return shim.Success(result)
@@ -279,18 +279,21 @@ func (t *txDataCC) getTxData(stub shim.ChaincodeStubInterface, args []string) pb
 
 // This Function Performs Periodic Query. called by International GLN
 func (t *txDataCC) getTxDataHistory(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	var qArgs queryArgs
-	divcd := ""
-	// var colList []string
 
+	// Check arguments
 	if len(args) < 1 {
 		return shim.Error(errMessage("BCCE0007", "empty args"))
 	}
-	// JSON Decoding
+	var qArgs queryArgs
 	err := json.Unmarshal([]byte(args[0]), &qArgs)
 	if err != nil {
-		// err case: type error, invalid json(empty args)
 		return shim.Error(errMessage("BCCE0003", err))
+	}
+	if checkAtoi(qArgs.ReqStartTime) || checkAtoi(qArgs.ReqEndTime) {
+		return shim.Error(errMessage("BCCE0007", `You should fill out date data "YYYYMMDDhhmmss"`))
+	}
+	if len(strings.TrimSpace(qArgs.ReqStartTime)) != 14 || len(strings.TrimSpace(qArgs.ReqEndTime)) != 14 {
+		return shim.Error(errMessage("BCCE0007", `You should fill out date data "YYYYMMDDhhmmss"`))
 	}
 
 	// Check Identity
@@ -305,50 +308,47 @@ func (t *txDataCC) getTxDataHistory(stub shim.ChaincodeStubInterface, args []str
 		if err != nil {
 			return shim.Error(errMessage("BCCE0002", "Tx Maker and LclGlnUnqCd does not match"))
 		}
-
 	}
 
-	if qArgs.DivCd == "02" {
-		divcd = "TO"
-	} else if qArgs.DivCd == "01" {
-		divcd = "FROM"
-	} else {
-		return shim.Error(errMessage("BCCE0005", "You must fill out DIV_Cd"))
-	}
-
-	// Valid Check Time String
-	if checkAtoi(qArgs.ReqStartTime) || checkAtoi(qArgs.ReqEndTime) {
-		return shim.Error(errMessage("BCCE0007", `You should fill out date data "YYYYMMDDhhmmss"`))
-	}
-	if len(checkBlank(qArgs.ReqStartTime)) != 14 || len(checkBlank(qArgs.ReqEndTime)) != 14 {
-		return shim.Error(errMessage("BCCE0007", `You should fill out date data "YYYYMMDDhhmmss"`))
+	// Valid DIV_CODE
+	divcd := ""
+	if qArgs.LcGlnUnqCd != "" {
+		if qArgs.DivCd == "02" {
+			divcd = "TO"
+		} else if qArgs.DivCd == "01" {
+			divcd = "FROM"
+		} else {
+			return shim.Error(errMessage("BCCE0005", "You must fill out DIV_Cd"))
+		}
 	}
 
 	//Default Size 100
-	var pgs int32
-	if qArgs.PageSize > 0 {
-		pgs = qArgs.PageSize
-	} else if qArgs.PageSize > pageSize {
-		pgs = pageSize
-	} else {
-		pgs = pageSize
+	pgs := qArgs.PageSize
+	if pgs == 0 {
+		pgs = DEFAULT_PAGE_SIZE
 	}
 
-	var pData []pubData
 	// Query
-	queryString := fmt.Sprintf(`{"selector": {"$and":[{"%s": "%s"},{"DATE":{"$gte": "%s"}},{"DATE":{"$lte": "%s"}}]}}`, divcd, qArgs.LcGlnUnqCd, qArgs.ReqStartTime, qArgs.ReqEndTime)
+	var pData []pubData
+	queryString := ""
+	if divcd == "" {
+		queryString = fmt.Sprintf(`{"selector": {"$and":[{"DATE":{"$gte": "%s"}},{"DATE":{"$lte": "%s"}}]}, "use_index":["indexDateDoc", "indexDate"]}`, qArgs.ReqStartTime, qArgs.ReqEndTime)
+	} else {
+		queryString = fmt.Sprintf(`{"selector": {"$and":[{"%s": "%s"},{"DATE":{"$gte": "%s"}},{"DATE":{"$lte": "%s"}}]}, "use_index":["indexDate%sDoc", "indexDate%s"]}`, divcd, qArgs.LcGlnUnqCd, qArgs.ReqStartTime, qArgs.ReqEndTime, divcd, divcd)
+	}
 	queryResults, bookmark, recordCnt, err := getResultForPublicData(stub, queryString, qArgs.BookMark, pgs)
 	if err != nil {
 		return shim.Error(errMessage("BCCE0008", err))
 	}
 
+	// To json
 	err = json.Unmarshal(queryResults, &pData)
 	if err != nil {
 		return shim.Error(errMessage("BCCE0003", err))
 	}
 
+	// for sorting collection for query
 	kvList := make(map[string][]string)
-	//for sorting collection for query
 	for i := 0; i < len(pData); i++ {
 		colName := collectionMaker(pData[i].From, pData[i].To)
 		kvList[colName] = append(kvList[colName], pData[i].GlnTxHash)
@@ -357,18 +357,21 @@ func (t *txDataCC) getTxDataHistory(stub shim.ChaincodeStubInterface, args []str
 	var respList [][]byte
 	for j := 0; j < len(colNameList); j++ {
 		colName := colNameList[j].String()
-		getPrivSelector := multiSelector("GLN_TX_HASH", kvList[colName])
-		qResp, err := getPrivQueryResultForQueryString(stub, colName, getPrivSelector)
+		// getPrivSelector := multiSelector("GLN_TX_HASH", kvList[colName])
+		// qResp, err := getPrivQueryResultForQueryString(stub, colName, getPrivSelector)
+		qResp, err := getPrivateDataForKeys(stub, colName, kvList[colName])
 		if err != nil {
 			return shim.Error(errMessage("BCCE0008", err))
 		}
-		respList = append(respList, qResp)
+		if len(qResp) > 0 {
+			respList = append(respList, qResp)
+		}
 	}
 	privResp := queryResponseStructMaker(respList, bookmark, recordCnt)
 	logger.Info("Query Success")
 	return shim.Success(privResp)
 }
 
-func (t *txDataCC) updateTxLog(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return shim.Success(nil)
-}
+// func (t *txDataCC) updateTxLog(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+// 	return shim.Success(nil)
+// }

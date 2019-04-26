@@ -20,8 +20,7 @@ var logger = shim.NewLogger("LIBEP")
 func main() {
 	err := shim.Start(new(libKlvCC))
 	if err != nil {
-		//fmt.Printf("Error starting endorse chaincode: %s", err)
-		logger.Error("Error starting libep chaincode : ", err)
+		logger.Error("Error starting libep chaincode : %s", err)
 	}
 }
 

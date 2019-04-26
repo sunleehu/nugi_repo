@@ -21,8 +21,8 @@ type queryArgs struct {
 	ReqStartTime         string `json:"REQ_START_TIME"`           //기간 시작 값
 	ReqEndTime           string `json:"REQ_END_TIME"`             //기간 끝 값
 	LocalGlnCd           string `json:"LOCALGLN_CODE"`            //LocalGLN 고유코드
-	BookMark             string `json:"PAGE_COUNT"`               // BookMark
-	PageSize             int32  `json:"PAGE_NEXT_ID"`             //Paging Size
+	BookMark             string `json:"PAGE_NEXT_ID"`             // BookMark
+	PageSize             int32  `json:"PAGE_COUNT"`               //Paging Size
 }
 
 type queryResults struct {

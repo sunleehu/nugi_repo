@@ -108,14 +108,13 @@ func addPaginationMetadataToQueryResults(buffer *bytes.Buffer, responseMetadata 
 func queryResponseStructMaker(result [][]byte, bookmark string, recordCnt int32) []byte {
 	var buffer bytes.Buffer
 	buffer.WriteString("{\"BC_RES_DATA\":[")
-	bArrayMemberAlreadyWritten := false
+	comma := false
 	for i := 0; i < len(result); i++ {
-		// Add a comma before array members, suppress it for the first array member
-		if bArrayMemberAlreadyWritten == true {
+		if comma == true {
 			buffer.WriteString(",")
 		}
 		buffer.Write(result[i])
-		bArrayMemberAlreadyWritten = true
+		comma = true
 	}
 	buffer.WriteString("],")
 	buffer.WriteString("\"PAGE_NEXT_ID\":")
@@ -136,10 +135,10 @@ func multiSelector(key string, data []string) string {
 		if comma {
 			selectKey = selectKey + ", "
 		}
-		selectKey = selectKey + fmt.Sprintf(`{"%s":"%s"}`, key, data[i])
+		selectKey = selectKey + "\"" + data[i] + "\""
 		comma = true
 	}
-	selector := fmt.Sprintf(`{"selector":{"$or":[%s]}}`, selectKey)
+	selector := fmt.Sprintf(`{"selector":{"%s":{"$in":[%s]}}, "use_index":["indexKeyDoc", "indexKey"]}`, key, selectKey)
 	return selector
 }
 
@@ -170,7 +169,7 @@ func getResultForPublicData(stub shim.ChaincodeStubInterface, queryString, bookm
 	var buffer bytes.Buffer
 	buffer.WriteString("[")
 
-	bArrayMemberAlreadyWritten := false
+	comma := false
 	// Query Result Iterator
 	for resultsIterator.HasNext() {
 		queryResponse, err := resultsIterator.Next()
@@ -178,12 +177,12 @@ func getResultForPublicData(stub shim.ChaincodeStubInterface, queryString, bookm
 			return nil, "", 0, err
 		}
 		// Add a comma before array members, suppress it for the first array member
-		if bArrayMemberAlreadyWritten == true {
+		if comma == true {
 			buffer.WriteString(",")
 		}
 
 		buffer.WriteString(string(queryResponse.Value))
-		bArrayMemberAlreadyWritten = true
+		comma = true
 	}
 	buffer.WriteString("]")
 
@@ -196,6 +195,7 @@ func getResultForPublicData(stub shim.ChaincodeStubInterface, queryString, bookm
 
 func getPrivQueryResultForQueryString(stub shim.ChaincodeStubInterface, collection, queryString string) ([]byte, error) {
 	logger.Debug("QueryString:", queryString)
+
 	// Get Query Result
 	resultsIterator, err := stub.GetPrivateDataQueryResult(collection, queryString)
 	if err != nil {
@@ -205,9 +205,8 @@ func getPrivQueryResultForQueryString(stub shim.ChaincodeStubInterface, collecti
 
 	// buffer is a JSON array containing QueryRecords
 	var buffer bytes.Buffer
-	// buffer.WriteString("[")
 
-	bArrayMemberAlreadyWritten := false
+	comma := false
 	// Query Result Iterator
 	for resultsIterator.HasNext() {
 		queryResponse, err := resultsIterator.Next()
@@ -215,16 +214,85 @@ func getPrivQueryResultForQueryString(stub shim.ChaincodeStubInterface, collecti
 			return nil, err
 		}
 		// Add a comma before array members, suppress it for the first array member
-		if bArrayMemberAlreadyWritten == true {
+		if comma {
 			buffer.WriteString(",")
 		}
 
 		buffer.WriteString(string(queryResponse.Value))
-		bArrayMemberAlreadyWritten = true
+		comma = true
 	}
-	// buffer.WriteString("]")
 
 	logger.Debug("Query Result:", buffer.String())
 
 	return buffer.Bytes(), nil
 }
+
+func getPrivateDataForKeys(stub shim.ChaincodeStubInterface, collection string, keys []string) ([]byte, error) {
+
+	var buffer bytes.Buffer
+	comma := false
+	for i := 0; i < len(keys); i++ {
+		data, err := stub.GetPrivateData(collection, keys[i])
+		if err != nil {
+			return nil, err
+		}
+		if data != nil {
+			if comma {
+				buffer.WriteString(",")
+			}
+			buffer.Write(data)
+			comma = true
+		}
+	}
+	logger.Debug("Get Private Data Result: ", buffer.String())
+
+	return buffer.Bytes(), nil
+}
+
+// func getPrivQueryResultAndKeys(stub shim.ChaincodeStubInterface, collection, queryString string, keys []string) ([]byte, error) {
+// 	logger.Debug("QueryString:", queryString)
+
+// 	// Get Query Result
+// 	resultsIterator, err := stub.GetPrivateDataQueryResult(collection, queryString)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer resultsIterator.Close()
+
+// 	// buffer is a JSON array containing QueryRecords
+// 	var buffer bytes.Buffer
+
+// 	comma := false
+// 	// Query Result Iterator
+// 	for resultsIterator.HasNext() {
+// 		queryResponse, err := resultsIterator.Next()
+// 		if err != nil {
+// 			return nil, err
+// 		}
+
+// 		// JSON Decoding
+// 		var tx transaction
+// 		err = json.Unmarshal(queryResponse.Value, &tx)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+
+// 		for i := len(keys) - 1; i > 0; i-- {
+// 			if tx.GlnTxHash == keys[i] {
+// 				// Add a comma before array members, suppress it for the first array member
+// 				if comma {
+// 					buffer.WriteString(", ")
+// 				}
+// 				buffer.WriteString(string(queryResponse.Value))
+// 				comma = true
+
+// 				removeIndex(keys, i)
+// 				break
+// 			}
+// 		}
+// 	}
+
+// 	logger.Debug("Query Result:", buffer.String())
+
+// 	return buffer.Bytes(), nil
+// }

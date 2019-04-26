@@ -9,6 +9,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/hyperledger/fabric/core/chaincode/lib/cid"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
@@ -18,16 +19,13 @@ import (
 type fxRateCC struct {
 }
 
-// Logger
 var logger = shim.NewLogger("FXRATE")
-
-var pageSize int32 = 100
+var DEFAULT_PAGE_SIZE int32 = 100
 
 func main() {
 	err := shim.Start(new(fxRateCC))
 	if err != nil {
-		//fmt.Printf("Error starting exRate chaincode: %s", err)
-		logger.Error("Error starting fxrate chaincode : ", err)
+		logger.Error("Error starting fxrate chaincode : %s", err)
 	}
 }
 
@@ -38,29 +36,255 @@ func (t *fxRateCC) Init(stub shim.ChaincodeStubInterface) pb.Response {
 
 func (t *fxRateCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	function, args := stub.GetFunctionAndParameters()
-	// fmt.Println("invoke is running " + function)
 	logger.Info("Invoke is running", function)
 	logger.Info("Args: ", args)
 
 	// Handle different functions
 	if function == "putxchrate" {
 		return t.putXchRate(stub, args)
-	} else if function == "deployxchrate" {
-		// return t.deployXchRate(stub, args)
 	} else if function == "getxchrate" {
 		return t.getXchRate(stub, args)
-	} else if function == "getglnxchrate" {
-		// return t.getGlnXchRate(stub, args)
-	} else if function == "getlatestglnxchr" {
-		// return t.getLatestGlnXchr(stub, args)
 	} else if function == "getxchratehistory" {
 		return t.getXchRateHistory(stub, args)
-	} else if function == "getglnxchratehistory" {
-		// return t.getGlnXchRateHistory(stub, args)
 	} else if function == "delstate" {
 		return t.deleteState(stub, args)
+	} else if function == "delstatehistory" {
+		return t.deleteStateHistory(stub, args)
 	}
+	// } else if function == "deployxchrate" {
+	// 	return t.deployXchRate(stub, args)
+	// } else if function == "getglnxchrate" {
+	// 	return t.getGlnXchRate(stub, args)
+	// } else if function == "getlatestglnxchr" {
+	// 	return t.getLatestGlnXchr(stub, args)
+	// } else if function == "getglnxchratehistory" {
+	// 	return t.getGlnXchRateHistory(stub, args)
+	// } else if function == "gettest" {
+	// 	return t.getTest(stub, args)
+	// } else if function == "getrangetest" {
+	// 	return t.getRangeTest(stub, args)
+	// }
+
 	return shim.Error(errMessage("BCCE0001", "Received unknown function invocation "+function))
+}
+
+// This Function Performs insertions. Called by International GLN
+func (t *fxRateCC) putXchRate(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+
+	// Check arguments
+	if len(args) == 0 {
+		return shim.Error(errMessage("BCCE0007", "Args is empty"))
+	}
+
+	// Check identity
+	err := cid.AssertAttributeValue(stub, "ACC_ROLE", "INT")
+	if err != nil {
+		return shim.Error(errMessage("BCCE0002", "This function Only for INT GLN"))
+	}
+
+	txID := stub.GetTxID()
+	var keyList []string
+	var dataList [][]byte
+	for k := 0; k < len(args); k++ {
+		var lcXch exchangeRate
+		// Json Decoding
+		err := json.Unmarshal([]byte(args[k]), &lcXch)
+		if err != nil {
+			return shim.Error(errMessage("BCCE0003", err))
+		}
+		// Empty Value Check
+		if isBlank(lcXch.LocalGlnXchrInfUnqno) {
+			return shim.Error(errMessage("BCCE0005", "Check LOCAL_GLN_XCHR_INF_UNQNO in JSON"))
+		}
+		// Make DATE
+		lcXch.Dtm = lcXch.XchrPbldDt + lcXch.XchrPbldHr
+		if len(strings.TrimSpace(lcXch.Dtm)) != 14 || checkAtoi(lcXch.Dtm) {
+			return shim.Error(errMessage("BCCE0007", "Check the string number XCHR_PBLD_DT and XCHR_PBLD_HR"))
+		}
+		// TX_ID
+		lcXch.TxID = txID
+
+		// Json Encoding
+		lcXchJSONBytes, err := json.Marshal(lcXch)
+		if err != nil {
+			return shim.Error(errMessage("BCCE0004", err))
+		}
+
+		// Make key, value list
+		keyList = append(keyList, lcXch.LocalGlnXchrInfUnqno)
+		dataList = append(dataList, lcXchJSONBytes)
+	}
+
+	// Duplicate Value Check in couchDB
+	// mulQuery := multiQueryMaker("LOCAL_GLN_XCHR_INF_UNQNO", keyList)
+	// queryString := fmt.Sprintf(`{"selector":{%s}, "fields":[%s]}`, mulQuery, `"LOCAL_GLN_XCHR_INF_UNQNO","TX_ID"`)
+	// exs, res, err := isExist(stub, queryString)
+	// if err != nil {
+	// 	return shim.Error(errMessage("BCCE0008", err))
+	// }
+	// if exs {
+	// 	if err != nil {
+	// 		return shim.Error(errMessage("BCCE0008", err))
+	// 	}
+	// 	return shim.Error(errMessage("BCCE0006", fmt.Sprintf("%s", res)))
+	// }
+
+	// Write Ledger Local GLN Exchange rate Info
+	for i := 0; i < len(dataList); i++ {
+		err := stub.PutState(keyList[i], dataList[i])
+		if err != nil {
+			return shim.Error(errMessage("BCCE0010", err))
+		}
+	}
+
+	logger.Info("Insert Complete")
+	return shim.Success(nil)
+}
+
+// This Function Performs Query. to get localXchRate  called by all
+func (t *fxRateCC) getXchRate(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+
+	// Check arguments
+	if len(args) == 0 {
+		return shim.Error(errMessage("BCCE0007", "Args is empty"))
+	}
+	var qArgs queryArgs
+	err := json.Unmarshal([]byte(args[0]), &qArgs)
+	if err != nil {
+		return shim.Error(errMessage("BCCE0003", err))
+	}
+	if isBlank(qArgs.LocalGlnXchrInfUnqno) {
+		return t.getXchRateHistory(stub, args)
+	}
+
+	// Query
+	queryString, err := stub.GetState(qArgs.LocalGlnXchrInfUnqno)
+	if err != nil {
+		return shim.Error(errMessage("BCCE0008", err))
+	}
+	if queryString == nil {
+		resp := queryResponseStructMaker(nil, "", 0)
+		return shim.Success(resp)
+	}
+	var resList [][]byte
+	resList = append(resList, queryString)
+	queryResults := queryResponseStructMaker(resList, "", 1)
+
+	logger.Info("Query Success")
+	return shim.Success(queryResults)
+}
+
+// This Function Performs Query. to get localXchRate  called by all
+func (t *fxRateCC) getXchRateHistory(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+
+	// Check Arguments
+	if len(args) == 0 {
+		return shim.Error(errMessage("BCCE0007", "Args is empty"))
+	}
+	var qArgs queryArgs
+	err := json.Unmarshal([]byte(args[0]), &qArgs)
+	if err != nil {
+		return shim.Error(errMessage("BCCE0003", err))
+	}
+	// if isBlank(qArgs.LocalGlnXchrInfUnqno) {
+	// 	return shim.Error(errMessage("BCCE0005", "Couldn't find XCHR_INF_UNQNO in JSON"))
+	// }
+	if checkAtoi(qArgs.ReqStartTime) || checkAtoi(qArgs.ReqEndTime) {
+		return shim.Error(errMessage("BCCE0007", "You must fill out the string number REQ_START_TIME and REQ_END_TIME"))
+	}
+
+	// Page size
+	pgs := qArgs.PageSize
+	if pgs == 0 {
+		pgs = DEFAULT_PAGE_SIZE
+	}
+
+	// Query
+	queryString := ""
+	if isBlank(qArgs.LocalGlnCd) {
+		queryString = fmt.Sprintf(`{"selector": {"$and": [{"DTM":{"$gte": "%s"}}, {"DTM":{"$lte": "%s"}}]}, "use_index":["indexDateDoc", "indexDate"]}`, qArgs.ReqStartTime, qArgs.ReqEndTime)
+	} else {
+		queryString = fmt.Sprintf(`{"selector": {"$and": [{"LOCAL_GLN_CD":"%s"},{"DTM":{"$gte": "%s"}}, {"DTM":{"$lte": "%s"}}]}, "use_index":["indexDateLclDoc", "indexDateLcl"]}`, qArgs.LocalGlnCd, qArgs.ReqStartTime, qArgs.ReqEndTime)
+	}
+	queryResults, err := getQueryResultForQueryStringWithPagination(stub, queryString, pgs, qArgs.BookMark)
+	if err != nil {
+		return shim.Error(errMessage("BCCE0008", err))
+	}
+
+	logger.Info("Query Success")
+	return shim.Success(queryResults)
+}
+
+func (t *fxRateCC) deleteState(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+
+	// Check Arguments
+	if len(args) == 0 {
+		return shim.Error(errMessage("BCCE0007", "Args is empty"))
+	}
+	var qArgs queryArgs
+	err := json.Unmarshal([]byte(args[0]), &qArgs)
+	if err != nil {
+		return shim.Error(errMessage("BCCE0003", err))
+	}
+	if isBlank(qArgs.LocalGlnXchrInfUnqno) {
+		return shim.Error(errMessage("BCCE0007", "You must fill out the string LOCAL_GLN_XCHR_INF_UNQNO"))
+	}
+
+	// Check identity
+	err = cid.AssertAttributeValue(stub, "ACC_ROLE", "INT")
+	if err != nil {
+		return shim.Error(errMessage("BCCE0002", "This function Only for INT GLN"))
+	}
+
+	// Query
+	err = stub.DelState(qArgs.LocalGlnXchrInfUnqno)
+	if err != nil {
+		return shim.Error(fmt.Sprintf("Delete Error :\n%s\n", err))
+	}
+	return shim.Success(nil)
+}
+
+func (t *fxRateCC) deleteStateHistory(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+
+	// Check Arguments
+	if len(args) == 0 {
+		return shim.Error(errMessage("BCCE0007", "Args is empty"))
+	}
+	var qArgs queryArgs
+	err := json.Unmarshal([]byte(args[0]), &qArgs)
+	if err != nil {
+		return shim.Error(errMessage("BCCE0003", err))
+	}
+	if checkAtoi(qArgs.ReqStartTime) || checkAtoi(qArgs.ReqEndTime) {
+		return shim.Error(errMessage("BCCE0007", "You must fill out the string number ReqStratTime and ReqEndTime"))
+	}
+
+	// Check identity
+	err = cid.AssertAttributeValue(stub, "ACC_ROLE", "INT")
+	if err != nil {
+		return shim.Error(errMessage("BCCE0002", "This function Only for INT GLN"))
+	}
+
+	// Query
+	var queryString string
+	if isBlank(qArgs.LocalGlnCd) {
+		queryString = fmt.Sprintf(`{"selector": {"$and": [{"DTM":{"$gte": "%s"}}, {"DTM":{"$lte": "%s"}}]}, "use_index":["indexDateDoc", "indexDate"]}`, qArgs.ReqStartTime, qArgs.ReqEndTime)
+	} else {
+		queryString = fmt.Sprintf(`{"selector": {"$and": [{"LOCAL_GLN_CD":"%s"},{"DTM":{"$gte": "%s"}}, {"DTM":{"$lte": "%s"}}]}, "use_index":["indexDateLclDoc", "indexDateLcl"]}`, qArgs.LocalGlnCd, qArgs.ReqStartTime, qArgs.ReqEndTime)
+	}
+	dataList, err := getDataByQueryString(stub, queryString)
+	if err != nil {
+		return shim.Error(errMessage("BCCE0008", err))
+	}
+
+	// Delete
+	for i := 0; i < len(dataList); i++ {
+		err = stub.DelState(dataList[i].LocalGlnXchrInfUnqno)
+		if err != nil {
+			return shim.Error(fmt.Sprintf("Delete Error :\n%s\n", err))
+		}
+	}
+	return shim.Success(nil)
 }
 
 // This Function Performs insertions. Called by Local GLN
@@ -227,37 +451,32 @@ func (t *fxRateCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 // 	return shim.Success(nil)
 // }
 
-// This Function Performs Query. to get localXchRate  called by all
-func (t *fxRateCC) getXchRate(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	var qArgs queryArgs
-	// JSON Decoding
-	err := json.Unmarshal([]byte(args[0]), &qArgs)
-	if err != nil {
-		// err case: type err, invalid json
-		return shim.Error(errMessage("BCCE0003", err))
-	}
-	// Empty Value Check
-	if len(checkBlank(qArgs.LocalGlnXchrInfUnqno)) == 0 {
-		return t.getXchRateHistory(stub, args)
-	}
+// // This Function Performs Query. to get localXchRate  called by all
+// func (t *fxRateCC) getTest(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 
-	queryString := fmt.Sprintf(`{"selector": {"LOCAL_GLN_XCHR_INF_UNQNO": "%s"}}`, qArgs.LocalGlnXchrInfUnqno)
-	//Default Size 100
-	// var pgs int32
-	// if qArgs.PageSize > 0 {
-	// 	pgs = qArgs.PageSize
-	// } else {
-	// 	pgs = pageSize
-	// }
-	// Query
-	queryResults, err := getQueryResultForQueryStringWithPagination(stub, queryString, 1, "")
-	if err != nil {
-		return shim.Error(errMessage("BCCE0008", err))
-	}
-	logger.Info("Query Success")
+// 	queryString := args[0]
+// 	queryResults, err := getQueryResultForQueryStringWithPagination(stub, queryString, 1, "")
+// 	if err != nil {
+// 		return shim.Error(errMessage("BCCE0008", err))
+// 	}
+// 	logger.Info("Query Success")
 
-	return shim.Success(queryResults)
-}
+// 	return shim.Success(queryResults)
+// }
+
+// // This Function Performs Query. to get localXchRate  called by all
+// func (t *fxRateCC) getRangeTest(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+
+// 	queryString := args[0]
+// 	queryResults, err := getQueryResultForQueryStringWithPagination(stub, queryString, 100, "")
+
+// 	if err != nil {
+// 		return shim.Error(errMessage("BCCE0008", err))
+// 	}
+// 	logger.Info("Query Success")
+
+// 	return shim.Success(queryResults)
+// }
 
 // func (t *fxRateCC) getGlnXchRate(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 // 	var qArgs queryArgs
@@ -328,109 +547,32 @@ func (t *fxRateCC) getXchRate(stub shim.ChaincodeStubInterface, args []string) p
 // 	return shim.Success(queryResults)
 // }
 
-func (t *fxRateCC) getLatestGlnXchr(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	var qArgs queryArgs
-	err := json.Unmarshal([]byte(args[0]), &qArgs)
-	if err != nil {
-		// err case: type err, invalid json
-		return shim.Error(errMessage("BCCE0003", err))
-	}
-	var queryString string
-	queryString = fmt.Sprintf(`{"selector": {"DOC_TYPE":"latestGlnXchr"}}`)
+// func (t *fxRateCC) getLatestGlnXchr(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+// 	var qArgs queryArgs
+// 	err := json.Unmarshal([]byte(args[0]), &qArgs)
+// 	if err != nil {
+// 		// err case: type err, invalid json
+// 		return shim.Error(errMessage("BCCE0003", err))
+// 	}
+// 	var queryString string
+// 	queryString = fmt.Sprintf(`{"selector": {"DOC_TYPE":"latestGlnXchr"}}`)
 
-	//Default Size 100
-	var pgs int32
-	if qArgs.PageSize > 0 {
-		pgs = qArgs.PageSize
-	} else {
-		pgs = pageSize
-	}
-	// Query
-	queryResults, err := getQueryResultForQueryStringWithPagination(stub, queryString, pgs, qArgs.BookMark)
-	if err != nil {
-		return shim.Error(errMessage("BCCE0008", err))
-	}
-	logger.Info("Query Success")
+// 	//Default Size 100
+// 	var pgs int32
+// 	if qArgs.PageSize > 0 {
+// 		pgs = qArgs.PageSize
+// 	} else {
+// 		pgs = pageSize
+// 	}
+// 	// Query
+// 	queryResults, err := getQueryResultForQueryStringWithPagination(stub, queryString, pgs, qArgs.BookMark)
+// 	if err != nil {
+// 		return shim.Error(errMessage("BCCE0008", err))
+// 	}
+// 	logger.Info("Query Success")
 
-	return shim.Success(queryResults)
-}
-
-// This Function Performs insertions. Called by International GLN
-func (t *fxRateCC) putXchRate(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	// Emtpy Argument Check
-	// logger.Info(args[0])
-	if len(args) == 0 {
-		return shim.Error(errMessage("BCCE0007", "Args is empty"))
-	}
-
-	//check identity
-	err := cid.AssertAttributeValue(stub, "ACC_ROLE", "INT")
-	if err != nil {
-		return shim.Error(errMessage("BCCE0002", "This function Only for INT GLN"))
-	}
-	txID := stub.GetTxID()
-	var validData [][]byte
-	var keyList []string
-
-	for k := 0; k < len(args); k++ {
-		var lcXch exchangeRate
-		// Json Decoding
-		err := json.Unmarshal([]byte(args[k]), &lcXch)
-		if err != nil {
-			return shim.Error(errMessage("BCCE0003", err))
-		}
-
-		lcXch.Dtm = lcXch.XchrPbldDt + lcXch.XchrPbldHr
-
-		if len(checkBlank(lcXch.Dtm)) != 14 || checkAtoi(lcXch.Dtm) {
-			return shim.Error(errMessage("BCCE0007", "Check the string number XCHR_PBLD_DT and XCHR_PBLD_HR"))
-		}
-
-		//TX ID
-		// Empty Value Check
-		if len(checkBlank(lcXch.LocalGlnXchrInfUnqno)) == 0 {
-			return shim.Error(errMessage("BCCE0005", "Check LOCAL_GLN_XCHR_INF_UNQNO in JSON"))
-		}
-		lcXch.TxID = txID
-
-		// Json Encoding
-		lcXchJSONBytes, err := json.Marshal(lcXch)
-		if err != nil {
-			return shim.Error(errMessage("BCCE0004", err))
-		}
-
-		//Event JSON
-		keyList = append(keyList, lcXch.LocalGlnXchrInfUnqno)
-		validData = append(validData, lcXchJSONBytes)
-	}
-	// Duplicate Value Check in couchDB
-	// mulQuery := multiQueryMaker("LOCAL_GLN_XCHR_INF_UNQNO", keyList)
-	// queryString := fmt.Sprintf(`{"selector":{%s}, "fields":[%s]}`, mulQuery, `"LOCAL_GLN_XCHR_INF_UNQNO","TX_ID"`)
-
-	// fmt.Println(queryString)
-	// exs, res, err := isExist(stub, queryString)
-	// if err != nil {
-	// 	return shim.Error(errMessage("BCCE0008", err))
-	// }
-	// if exs {
-	// 	if err != nil {
-	// 		return shim.Error(errMessage("BCCE0008", err))
-	// 	}
-	// 	return shim.Error(errMessage("BCCE0006", fmt.Sprintf("%s", res)))
-	// }
-
-	for i := 0; i < len(validData); i++ {
-		// Write Ledger Local GLN Exchange rate Info
-		err := stub.PutState(keyList[i], validData[i])
-
-		if err != nil {
-			return shim.Error(errMessage("BCCE0010", err))
-		}
-	}
-	logger.Info("Insert Complete")
-
-	return shim.Success(nil)
-}
+// 	return shim.Success(queryResults)
+// }
 
 // This Function Performs insertions. Called by International GLN
 // func (t *fxRateCC) deployXchRate(stub shim.ChaincodeStubInterface, args []string) pb.Response {
@@ -496,44 +638,6 @@ func (t *fxRateCC) putXchRate(stub shim.ChaincodeStubInterface, args []string) p
 // 	return shim.Success(nil)
 // }
 
-// This Function Performs Query. to get localXchRate  called by all
-func (t *fxRateCC) getXchRateHistory(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	var qArgs queryArgs
-	// JSON Decoding
-	err := json.Unmarshal([]byte(args[0]), &qArgs)
-	if err != nil {
-		// err case: type err, invalid json
-		return shim.Error(errMessage("BCCE0003", err))
-	}
-	// Empty Value Check
-	if len(checkBlank(qArgs.LocalGlnXchrInfUnqno)) == 0 {
-		return shim.Error(errMessage("BCCE0005", "Couldn't find XCHR_INF_UNQNO in JSON"))
-	}
-
-	// Valid Check Time String
-	if checkAtoi(qArgs.ReqStartTime) || checkAtoi(qArgs.ReqEndTime) {
-		return shim.Error(errMessage("BCCE0007", "You must fill out the string number ReqStratTime and ReqEndTime"))
-	}
-
-	queryString := fmt.Sprintf(`{"selector": {"$and": [{"LOCAL_GLN_CD":"%s"},{"DTM":{"$gte": "%s"}}, {"DTM":{"$lte": "%s"}}]}}`, qArgs.LocalGlnCd, qArgs.ReqStartTime, qArgs.ReqEndTime)
-	var pgs int32
-	if qArgs.PageSize > 0 {
-		pgs = qArgs.PageSize
-	} else {
-		pgs = pageSize
-	}
-
-	// Query
-	queryResults, err := getQueryResultForQueryStringWithPagination(stub, queryString, pgs, qArgs.BookMark)
-
-	if err != nil {
-		return shim.Error(errMessage("BCCE0008", err))
-	}
-	logger.Info("Query Success")
-
-	return shim.Success(queryResults)
-}
-
 // func (t *fxRateCC) getGlnXchRateHistory(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 // 	var qArgs queryArgs
 // 	// JSON Decoding
@@ -572,11 +676,3 @@ func (t *fxRateCC) getXchRateHistory(stub shim.ChaincodeStubInterface, args []st
 
 // 	return shim.Success(queryResults)
 // }
-
-func (t *fxRateCC) deleteState(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	err := stub.DelState(args[0])
-	if err != nil {
-		return shim.Error("del err")
-	}
-	return shim.Success(nil)
-}

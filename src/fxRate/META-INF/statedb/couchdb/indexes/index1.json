@@ -1,0 +1,8 @@
+{
+    "index": {
+        "fields":[{"DTM":"desc"}]
+    } ,
+    "name": "indexDate",
+    "ddoc": "indexDateDoc",
+    "type":"json"
+}

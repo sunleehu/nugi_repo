@@ -1,0 +1,8 @@
+{
+    "index": {
+        "fields":[{"TO":"desc"}, {"DATE":"desc"}]
+    } ,
+    "name": "indexDateTO",
+    "ddoc": "indexDateTODoc",
+    "type": "json"
+}
