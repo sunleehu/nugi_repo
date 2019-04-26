@@ -318,7 +318,7 @@ func (t *txDataCC) getTxDataHistory(stub shim.ChaincodeStubInterface, args []str
 		} else if qArgs.DivCd == "01" {
 			divcd = "FROM"
 		} else {
-			return shim.Error(errMessage("BCCE0005", "You must fill out DIV_Cd"))
+			return shim.Error(errMessage("BCCE0005", "You must fill out DIV_CD"))
 		}
 	}
 
