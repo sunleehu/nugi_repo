@@ -78,7 +78,8 @@
     },
     "requiredPeerCount": 1,
     "maxPeerCount": 3,
-    "blockToLive": 1000
+    "blockToLive": 1000,
+    "memberOnlyRead": true
   }
 ]
  
