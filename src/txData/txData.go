@@ -65,6 +65,7 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 	if err != nil {
 		return shim.Error(errMessage("BCCE0005", "GET transient Data Error"))
 	}
+	logger.Debug("Args Count : ", len(privData["args"]))
 	logger.Debug("Transient Args : ", string(privData["args"]))
 	var txdata []transaction
 	err = json.Unmarshal(privData["args"], &txdata)
@@ -194,7 +195,7 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 		}
 
 		logger.Info("TRANSACTION_DATA_SAVED")
-		logger.Debug("SAVED_DATA : ", string(dat))
+		//logger.Debug("SAVED_DATA : ", string(dat))
 		// EVENT!!!
 		stub.SetEvent("TRANSACTION_DATA_SAVED", dat)
 	}
