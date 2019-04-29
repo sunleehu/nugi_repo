@@ -74,7 +74,7 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 	if len(txdata) < 1 {
 		return shim.Error(errMessage("BCCE0007", "Args are empty"))
 	}
-	logger.Debug("TxData Count : ", len(txdata))
+	logger.Info("Put Data Count : ", len(txdata))
 
 	// Check Identity
 	err = cid.AssertAttributeValue(stub, "ACC_ROLE", "INT")

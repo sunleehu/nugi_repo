@@ -57,6 +57,8 @@ func (t *glnBillCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 // This Function Performs insertions and Generating settlement start event. Called by International GLN
 func (t *glnBillCC) putBill(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 
+	logger.Info("Put Data Count : ", len(args))
+
 	// Check arguments
 	if len(args) == 0 {
 		return shim.Error(errMessage("BCCE0007", "Args is empty"))
