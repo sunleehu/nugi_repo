@@ -74,6 +74,7 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 	if len(txdata) < 1 {
 		return shim.Error(errMessage("BCCE0007", "Args are empty"))
 	}
+	logger.Info("Put Data Count : ", len(txdata))
 
 	// Check Identity
 	err = cid.AssertAttributeValue(stub, "ACC_ROLE", "INT")
@@ -173,7 +174,7 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 		if err != nil {
 			return shim.Error(errMessage("BCCE0004", err))
 		}
-		err = stub.PutPrivateData(colName, txdata[i].GlnTxHash, txlogJSONBytes)
+		err = stub.PutPrivateData(colName, hash, txlogJSONBytes)
 		if err != nil {
 			return shim.Error(errMessage("BCCE0009", err))
 		}
@@ -194,7 +195,7 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 		}
 
 		logger.Info("TRANSACTION_DATA_SAVED")
-		logger.Debug("SAVED_DATA : ", string(dat))
+		//logger.Debug("SAVED_DATA : ", string(dat))
 		// EVENT!!!
 		stub.SetEvent("TRANSACTION_DATA_SAVED", dat)
 	}
@@ -318,7 +319,7 @@ func (t *txDataCC) getTxDataHistory(stub shim.ChaincodeStubInterface, args []str
 		} else if qArgs.DivCd == "01" {
 			divcd = "FROM"
 		} else {
-			return shim.Error(errMessage("BCCE0005", "You must fill out DIV_Cd"))
+			return shim.Error(errMessage("BCCE0005", "You must fill out DIV_CD"))
 		}
 	}
 
