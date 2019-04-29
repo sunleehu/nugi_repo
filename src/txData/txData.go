@@ -65,7 +65,6 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 	if err != nil {
 		return shim.Error(errMessage("BCCE0005", "GET transient Data Error"))
 	}
-	logger.Debug("Args Count : ", len(privData["args"]))
 	logger.Debug("Transient Args : ", string(privData["args"]))
 	var txdata []transaction
 	err = json.Unmarshal(privData["args"], &txdata)
@@ -75,6 +74,7 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 	if len(txdata) < 1 {
 		return shim.Error(errMessage("BCCE0007", "Args are empty"))
 	}
+	logger.Debug("TxData Count : ", len(txdata))
 
 	// Check Identity
 	err = cid.AssertAttributeValue(stub, "ACC_ROLE", "INT")
