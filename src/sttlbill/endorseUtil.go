@@ -7,8 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 */
 
 import (
-	"fmt"
-
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 
 	pb "github.com/hyperledger/fabric/protos/peer"
@@ -41,20 +39,10 @@ func addOrgs(stub shim.ChaincodeStubInterface, args []string) (string, string) {
 	var err error
 	var nargs [][]byte
 
-	/* nargs[0] = chaincode function name
-	nargs[1:]... = arguments...
-	*/
 	epBytes, err = stub.GetStateValidationParameter(args[0])
-	fmt.Println("EP Bytes", epBytes)
 	nargs = append(nargs, []byte("addOrgs"), epBytes, []byte(args[1]), []byte(args[2]))
-	fmt.Println("nargs", nargs)
 
 	resp := _invokeCC(stub, channelID, libEp, nargs)
-	if err != nil {
-		logger.Error(err)
-		return "", err.Error()
-	}
-
 	if resp.GetStatus() != 200 {
 		logger.Info("Invoke Response Payload:", string(resp.GetPayload()))
 		logger.Info("Invoke Response status", resp.GetStatus())
@@ -63,7 +51,6 @@ func addOrgs(stub shim.ChaincodeStubInterface, args []string) (string, string) {
 
 	// set the modified endorsement policy for the key
 	err = stub.SetStateValidationParameter(args[0], resp.GetPayload())
-
 	if err != nil {
 		return "", err.Error()
 	}
@@ -71,78 +58,12 @@ func addOrgs(stub shim.ChaincodeStubInterface, args []string) (string, string) {
 	return "", ""
 }
 
-// delOrgs removes the list of MSP IDs from the invocation parameters
-// from the state's endorsement policy
-func delOrgs(stub shim.ChaincodeStubInterface) pb.Response {
-	_, parameters := stub.GetFunctionAndParameters()
-	if len(parameters) < 2 {
-		return shim.Error("No orgs to delete specified")
-	}
-
-	// get the endorsement policy for the key
-	var epBytes []byte
-	var err error
-
-	epBytes, err = stub.GetStateValidationParameter(parameters[0])
-
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-
-	fmt.Println(epBytes)
-	return shim.Success([]byte{})
-}
-
-// listOrgs returns the list of organizations currently part of
-// the state's endorsement policy
-func listOrgs(stub shim.ChaincodeStubInterface) pb.Response {
-	_, parameters := stub.GetFunctionAndParameters()
-	if len(parameters) < 1 {
-		return shim.Error("No key specified")
-	}
-
-	// get the endorsement policy for the key
-	// var epBytes []byte
-	// var err error
-
-	// epBytes, err = stub.GetStateValidationParameter(parameters[0])
-
-	// ep, err := statebased.NewStateEP(epBytes)
-	// if err != nil {
-	// 	return shim.Error(err.Error())
-	// }
-
-	// get the list of organizations in the endorsement policy
-	// orgs := ep.ListOrgs()
-	// orgsList, err := json.Marshal(orgs)
-	// if err != nil {
-	// 	return shim.Error(err.Error())
-	// }
-
-	return shim.Success(nil)
-}
-
 // delEP deletes the state-based endorsement policy for the key altogether
-func delEP(stub shim.ChaincodeStubInterface) pb.Response {
-	_, parameters := stub.GetFunctionAndParameters()
-	if len(parameters) < 1 {
-		return shim.Error("No key specified")
-	}
+func delEP(stub shim.ChaincodeStubInterface, key string) error {
 
 	// set the modified endorsement policy for the key to nil
-	var err error
-
-	err = stub.SetStateValidationParameter(parameters[0], nil)
-
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-
-	return shim.Success([]byte{})
+	err := stub.SetStateValidationParameter(key, nil)
+	return err
 }
 
 // invokeCC is used for chaincode to chaincode invocation of a given cc on another channel

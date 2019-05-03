@@ -2,16 +2,44 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	pb "github.com/hyperledger/fabric/protos/peer"
 )
 
-var defaultPageSize = 100
+func getDataByQueryString(stub shim.ChaincodeStubInterface, queryString string) ([]glnbill, error) {
+
+	logger.Debug("QueryString :", queryString)
+	// Get Query Result
+	resultsIterator, err := stub.GetQueryResult(queryString)
+	if err != nil {
+		return nil, err
+	}
+	defer resultsIterator.Close()
+
+	// Query Result Iterator
+	var dataList []glnbill
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil {
+			return nil, err
+		}
+
+		var data glnbill
+		err = json.Unmarshal([]byte(queryResponse.Value), &data)
+		if err != nil {
+			return nil, err
+		}
+		dataList = append(dataList, data)
+	}
+	return dataList, nil
+}
 
 func getQueryResultForQueryString(stub shim.ChaincodeStubInterface, queryString string) ([]byte, error) {
-	logger.Debug("QueryString : ", queryString)
+
+	logger.Debug("QueryString :", queryString)
 	// Get Query Result
 	resultsIterator, err := stub.GetQueryResult(queryString)
 	if err != nil {
@@ -40,15 +68,12 @@ func getQueryResultForQueryString(stub shim.ChaincodeStubInterface, queryString 
 	}
 	buffer.WriteString("]")
 
-	logger.Debug("Query Result : ", buffer.String())
-
 	return buffer.Bytes(), nil
 }
 
 func getQueryResultForQueryStringWithPagination(stub shim.ChaincodeStubInterface, queryString string, pageSize int32, bookmark string) ([]byte, error) {
 
-	//fmt.Printf("- getQueryResultForQueryString queryString:\n%s\n", queryString)
-	logger.Debugf("getQueryResultForQueryString queryString:\n%s\n", queryString)
+	logger.Debug("QueryString :", queryString)
 
 	resultsIterator, responseMetadata, err := stub.GetQueryResultWithPagination(queryString, pageSize, bookmark)
 	if err != nil {
@@ -62,11 +87,7 @@ func getQueryResultForQueryStringWithPagination(stub shim.ChaincodeStubInterface
 	}
 
 	bufferWithPaginationInfo := addPaginationMetadataToQueryResults(buffer, responseMetadata)
-
-	//fmt.Printf("- getQueryResultForQueryString queryResult:\n%s\n", bufferWithPaginationInfo.String())
-	logger.Debugf("getQueryResultForQueryString queryResult:\n%s\n", bufferWithPaginationInfo.String())
-
-	return buffer.Bytes(), nil
+	return bufferWithPaginationInfo.Bytes(), nil
 }
 
 func constructQueryResponseFromIterator(resultsIterator shim.StateQueryIteratorInterface) (*bytes.Buffer, error) {

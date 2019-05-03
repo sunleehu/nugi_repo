@@ -6,6 +6,7 @@ package main
  */
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	"github.com/hyperledger/fabric/core/chaincode/shim/ext/statebased"
@@ -31,11 +32,9 @@ func (t *libKlvCC) Init(stub shim.ChaincodeStubInterface) pb.Response {
 
 func (t *libKlvCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	function, args := stub.GetFunctionAndParameters()
-	//logger = shim.NewLogger("CC:libKlvCC TX:" + stub.GetTxID())
-	//logger.Infof("Invoke is running %s", function)
-	// Handle different functions
-	logger.Info("Invoke is running", function)
-	logger.Info("Args: ", args)
+	fmt.Println()
+	logger.Info("Func :", function)
+	logger.Info("Args :", args)
 
 	//args[0] = epBytes
 	//args[1:]... = "Org1MSP","Org2MSP"
@@ -53,27 +52,26 @@ func (t *libKlvCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 func addOrgs(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	epBytes := []byte(args[0])
-	//logger.Debug("EP Bytes : ", epBytes)
-	//logger.Debug("Org List : ", args[1:])
-
 	ep, err := statebased.NewStateEP(epBytes)
 	if err != nil {
 		logger.Error(err)
 		return shim.Error(err.Error())
 	}
-	//logger.Debug("EP : ", ep)
 
 	err = ep.AddOrgs(statebased.RoleTypeMember, args[1:]...)
 	if err != nil {
+		logger.Error(err)
 		return shim.Error(err.Error())
 	}
 
-	epBytes, err = ep.Policy()
+	resBytes, err := ep.Policy()
 	if err != nil {
+		logger.Error(err)
 		return shim.Error(err.Error())
 	}
-	logger.Debug("Policy Results : ", epBytes)
-	return shim.Success(epBytes)
+
+	logger.Info("AddOrgs Complete")
+	return shim.Success(resBytes)
 }
 
 // delOrgs removes the list of MSP IDs from the invocation parameters
@@ -82,22 +80,23 @@ func delOrgs(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 
 	// get the endorsement policy for the key
 	epBytes := []byte(args[0])
-	var err error
 	ep, err := statebased.NewStateEP(epBytes)
 	if err != nil {
+		logger.Error(err)
 		return shim.Error(err.Error())
 	}
 
 	// delete organizations from the endorsement policy of that key
 	ep.DelOrgs(args[1:]...)
 
-	// epBytes, err = ep.Policy()
-	epBytes, err = ep.PolicyOR()
+	resBytes, err := ep.Policy()
 	if err != nil {
+		logger.Error(err)
 		return shim.Error(err.Error())
 	}
 
-	return shim.Success(epBytes)
+	logger.Info("DelOrgs Complete")
+	return shim.Success(resBytes)
 }
 
 // listOrgs returns the list of organizations currently part of
@@ -106,11 +105,9 @@ func listOrgs(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 
 	// get the endorsement policy for the key
 	epBytes := []byte(args[0])
-	var err error
-
 	ep, err := statebased.NewStateEP(epBytes)
-
 	if err != nil {
+		logger.Error(err)
 		return shim.Error(err.Error())
 	}
 
@@ -118,6 +115,7 @@ func listOrgs(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	orgs := ep.ListOrgs()
 	orgsList, err := json.Marshal(orgs)
 	if err != nil {
+		logger.Error(err)
 		return shim.Error(err.Error())
 	}
 

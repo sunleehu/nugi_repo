@@ -19,8 +19,8 @@ import (
 type glnBillCC struct {
 }
 
-var DEFAULT_PAGE_SIZE int32 = 100
 var logger = shim.NewLogger("STTLBILL")
+var defaultPageSize int32 = 100
 
 func main() {
 	err := shim.Start(new(glnBillCC))
@@ -35,8 +35,9 @@ func (t *glnBillCC) Init(stub shim.ChaincodeStubInterface) pb.Response {
 
 func (t *glnBillCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	function, args := stub.GetFunctionAndParameters()
-	logger.Info("Invoke is running", function)
-	logger.Info("Args: ", args)
+	fmt.Println()
+	logger.Info("Func :", function)
+	logger.Info("Args : ", args)
 
 	//  Handle different functions
 	if function == "putsttlbill" {
@@ -47,6 +48,10 @@ func (t *glnBillCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return t.getBillHistory(stub, args)
 	} else if function == "confirmsttlbill" {
 		return t.confirmBill(stub, args)
+	} else if function == "delstate" {
+		return t.deleteState(stub, args)
+	} else if function == "delstatehistory" {
+		return t.deleteStateHistory(stub, args)
 	}
 	// } else if function == "setLogLevel" {
 	// 	return setLogLevel(args[0])
@@ -99,13 +104,13 @@ func (t *glnBillCC) putBill(stub shim.ChaincodeStubInterface, args []string) pb.
 			return shim.Error(errMessage("BCCE0004", err))
 		}
 
-		// Add key level
-		var callargs []string
-		callargs = append(callargs, bill.AdjPblNo, endorserMsp, cdToMSP(bill.SndrLocalGlnCd))
-		_, errm := addOrgs(stub, callargs)
-		if errm != "" {
-			return shim.Error(errMessage("BCCE0011", errm))
-		}
+		// // Add key level
+		// var callargs []string
+		// callargs = append(callargs, bill.AdjPblNo, endorserMsp, cdToMSP(bill.SndrLocalGlnCd))
+		// _, errm := addOrgs(stub, callargs)
+		// if errm != "" {
+		// 	return shim.Error(errMessage("BCCE0012", errm))
+		// }
 
 		// Event JSON
 		evtMap[bill.SndrLocalGlnCd] = append(evtMap[bill.SndrLocalGlnCd], bill.AdjPblNo)
@@ -116,10 +121,6 @@ func (t *glnBillCC) putBill(stub shim.ChaincodeStubInterface, args []string) pb.
 	}
 
 	// Duplicate Value Check in couchDB
-	// mulQuery := multiQueryMaker("ADJ_PBL_NO", keyList)
-	// queryString := fmt.Sprintf(`{"selector":{%s}, "fields":[%s]}`, mulQuery, `"ADJ_PBL_NO","TX_ID"`)
-	// logger.Debug(queryString)
-	// exs, res, err := isExist(stub, queryString)
 	exs, res, err := isExistByKey(stub, keyList)
 	if err != nil {
 		return shim.Error(errMessage("BCCE0008", err))
@@ -146,11 +147,9 @@ func (t *glnBillCC) putBill(stub shim.ChaincodeStubInterface, args []string) pb.
 		if e != nil {
 			return shim.Error(errMessage("BCCE0004", e))
 		}
-
-		logger.Info("SETTLEMENT_BILL_SAVED")
-		logger.Debug("SETTLEMENT_BILL_SAVED", string(dat))
 		// EVENT!!!
 		stub.SetEvent("SETTLEMENT_BILL_SAVED", dat)
+		logger.Infof("[EVENT] SETTLEMENT_BILL_SAVED :\n%s", string(dat))
 	}
 
 	logger.Info("Insert Complete")
@@ -162,7 +161,7 @@ func (t *glnBillCC) getBill(stub shim.ChaincodeStubInterface, args []string) pb.
 
 	// Check arguments
 	if len(args) < 1 {
-		return shim.Error(errMessage("BCCE0007", "empty args"))
+		return shim.Error(errMessage("BCCE0007", "Args is empty"))
 	}
 	var qArgs queryArgs
 	err := json.Unmarshal([]byte(args[0]), &qArgs)
@@ -200,7 +199,8 @@ func (t *glnBillCC) getBill(stub shim.ChaincodeStubInterface, args []string) pb.
 	}
 	if state == nil {
 		resp := queryResponseStructMaker(nil, "", 0)
-		logger.Info("Query results is zero")
+		logger.Info("Query Complete")
+		logger.Info(string(resp))
 		return shim.Success(resp)
 	}
 
@@ -208,7 +208,8 @@ func (t *glnBillCC) getBill(stub shim.ChaincodeStubInterface, args []string) pb.
 	resList = append(resList, state)
 	queryResults := queryResponseStructMaker(resList, "", 1)
 
-	logger.Info("Query Success")
+	logger.Info("Query Complete")
+	logger.Info(string(queryResults))
 	return shim.Success(queryResults)
 }
 
@@ -227,6 +228,9 @@ func (t *glnBillCC) getBillHistory(stub shim.ChaincodeStubInterface, args []stri
 	if checkAtoi(qArgs.ReqStartTime) || checkAtoi(qArgs.ReqEndTime) {
 		return shim.Error(errMessage("BCCE0007", "You must fill out the string number ReqStartTime and ReqEndTime"))
 	}
+	if len(strings.TrimSpace(qArgs.ReqStartTime)) != 8 || len(strings.TrimSpace(qArgs.ReqEndTime)) != 8 {
+		return shim.Error(errMessage("BCCE0007", `You should fill out date data "YYYYMMDD"`))
+	}
 
 	// Check Identity
 	attr, m := checkGlnIntl(stub)
@@ -244,7 +248,7 @@ func (t *glnBillCC) getBillHistory(stub shim.ChaincodeStubInterface, args []stri
 	// Page Size
 	pgs := qArgs.PageSize
 	if pgs == 0 {
-		pgs = DEFAULT_PAGE_SIZE
+		pgs = defaultPageSize
 	}
 
 	// Query
@@ -260,6 +264,7 @@ func (t *glnBillCC) getBillHistory(stub shim.ChaincodeStubInterface, args []stri
 	}
 
 	logger.Info("Query Success")
+	logger.Info(string(queryResults))
 	return shim.Success(queryResults)
 }
 
@@ -326,5 +331,96 @@ func (t *glnBillCC) confirmBill(stub shim.ChaincodeStubInterface, args []string)
 	}
 
 	logger.Info("Update Complete")
+	logger.Info(string(jtx))
+	return shim.Success(nil)
+}
+
+func (t *glnBillCC) deleteState(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+
+	// Check Arguments
+	if len(args) == 0 {
+		return shim.Error(errMessage("BCCE0007", "Args is empty"))
+	}
+	var qArgs queryArgs
+	err := json.Unmarshal([]byte(args[0]), &qArgs)
+	if err != nil {
+		return shim.Error(errMessage("BCCE0003", err))
+	}
+	if isBlank(qArgs.AdjPblNo) {
+		return shim.Error(errMessage("BCCE0007", "You must fill out the string ADJ_PBL_NO"))
+	}
+
+	// Check identity
+	err = cid.AssertAttributeValue(stub, "ACC_ROLE", "INT")
+	if err != nil {
+		return shim.Error(errMessage("BCCE0002", "This function Only for INT GLN"))
+	}
+
+	// Delete State
+	err = stub.DelState(qArgs.AdjPblNo)
+	if err != nil {
+		return shim.Error(errMessage("BCCE0011", err))
+	}
+
+	// // Delete Key-Level Endorsement
+	// err = delEP(stub, qArgs.AdjPblNo)
+	// if err != nil {
+	// 	return shim.Error(errMessage("BCCE0011", err))
+	// }
+
+	logger.Info("Delete Complete")
+	return shim.Success(nil)
+}
+
+func (t *glnBillCC) deleteStateHistory(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+
+	// Check Arguments
+	if len(args) == 0 {
+		return shim.Error(errMessage("BCCE0007", "Args is empty"))
+	}
+	var qArgs queryArgs
+	err := json.Unmarshal([]byte(args[0]), &qArgs)
+	if err != nil {
+		return shim.Error(errMessage("BCCE0003", err))
+	}
+	if checkAtoi(qArgs.ReqStartTime) || checkAtoi(qArgs.ReqEndTime) {
+		return shim.Error(errMessage("BCCE0007", "You must fill out the string number ReqStratTime and ReqEndTime"))
+	}
+	if len(strings.TrimSpace(qArgs.ReqStartTime)) != 8 || len(strings.TrimSpace(qArgs.ReqEndTime)) != 8 {
+		return shim.Error(errMessage("BCCE0007", `You should fill out date data "YYYYMMDD"`))
+	}
+
+	// Check identity
+	err = cid.AssertAttributeValue(stub, "ACC_ROLE", "INT")
+	if err != nil {
+		return shim.Error(errMessage("BCCE0002", "This function Only for INT GLN"))
+	}
+
+	// Query
+	var queryString string
+	if qArgs.LcGlnUnqCd == "" {
+		queryString = fmt.Sprintf(`{"selector": {"$and":[{"ADJ_PBL_DT":{"$gte": "%s"}},{"ADJ_PBL_DT":{"$lte": "%s"}}]}, "use_index":["indexDateDoc", "indexDate"]}`, qArgs.ReqStartTime, qArgs.ReqEndTime)
+	} else {
+		queryString = fmt.Sprintf(`{"selector": {"$and":[{"LOCAL_GLN_CD": "%s"},{"ADJ_PBL_DT":{"$gte": "%s"}},{"ADJ_PBL_DT":{"$lte": "%s"}}]}, "use_index":["indexDateLclDoc", "indexDateLcl"]}`, qArgs.LcGlnUnqCd, qArgs.ReqStartTime, qArgs.ReqEndTime)
+	}
+	dataList, err := getDataByQueryString(stub, queryString)
+	if err != nil {
+		return shim.Error(errMessage("BCCE0008", err))
+	}
+
+	// Delete
+	count := len(dataList)
+	for i := 0; i < count; i++ {
+		err = stub.DelState(dataList[i].AdjPblNo)
+		if err != nil {
+			return shim.Error(errMessage("BCCE0011", err))
+		}
+		// err = delEP(stub, dataList[i].AdjPblNo)
+		// if err != nil {
+		// 	return shim.Error(errMessage("BCCE0011", err))
+		// }
+	}
+
+	logger.Info("Delete Complete -", count)
 	return shim.Success(nil)
 }

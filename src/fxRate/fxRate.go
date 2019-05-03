@@ -20,7 +20,7 @@ type fxRateCC struct {
 }
 
 var logger = shim.NewLogger("FXRATE")
-var DEFAULT_PAGE_SIZE int32 = 100
+var defaultPageSize int32 = 100
 
 func main() {
 	err := shim.Start(new(fxRateCC))
@@ -36,8 +36,9 @@ func (t *fxRateCC) Init(stub shim.ChaincodeStubInterface) pb.Response {
 
 func (t *fxRateCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	function, args := stub.GetFunctionAndParameters()
-	logger.Info("Invoke is running", function)
-	logger.Info("Args: ", args)
+	fmt.Println()
+	logger.Info("Func :", function)
+	logger.Info("Args :", args)
 
 	// Handle different functions
 	if function == "putxchrate" {
@@ -166,13 +167,16 @@ func (t *fxRateCC) getXchRate(stub shim.ChaincodeStubInterface, args []string) p
 	}
 	if queryString == nil {
 		resp := queryResponseStructMaker(nil, "", 0)
+		logger.Info("Query Complete")
+		logger.Info(string(resp))
 		return shim.Success(resp)
 	}
 	var resList [][]byte
 	resList = append(resList, queryString)
 	queryResults := queryResponseStructMaker(resList, "", 1)
 
-	logger.Info("Query Success")
+	logger.Info("Query Complete")
+	logger.Info(string(queryResults))
 	return shim.Success(queryResults)
 }
 
@@ -188,17 +192,17 @@ func (t *fxRateCC) getXchRateHistory(stub shim.ChaincodeStubInterface, args []st
 	if err != nil {
 		return shim.Error(errMessage("BCCE0003", err))
 	}
-	// if isBlank(qArgs.LocalGlnXchrInfUnqno) {
-	// 	return shim.Error(errMessage("BCCE0005", "Couldn't find XCHR_INF_UNQNO in JSON"))
-	// }
 	if checkAtoi(qArgs.ReqStartTime) || checkAtoi(qArgs.ReqEndTime) {
 		return shim.Error(errMessage("BCCE0007", "You must fill out the string number REQ_START_TIME and REQ_END_TIME"))
+	}
+	if len(strings.TrimSpace(qArgs.ReqStartTime)) != 14 || len(strings.TrimSpace(qArgs.ReqEndTime)) != 14 {
+		return shim.Error(errMessage("BCCE0007", `You should fill out date data "YYYYMMDDhhmmss"`))
 	}
 
 	// Page size
 	pgs := qArgs.PageSize
 	if pgs == 0 {
-		pgs = DEFAULT_PAGE_SIZE
+		pgs = defaultPageSize
 	}
 
 	// Query
@@ -213,7 +217,8 @@ func (t *fxRateCC) getXchRateHistory(stub shim.ChaincodeStubInterface, args []st
 		return shim.Error(errMessage("BCCE0008", err))
 	}
 
-	logger.Info("Query Success")
+	logger.Info("Query Complete")
+	logger.Info(string(queryResults))
 	return shim.Success(queryResults)
 }
 
@@ -238,11 +243,13 @@ func (t *fxRateCC) deleteState(stub shim.ChaincodeStubInterface, args []string) 
 		return shim.Error(errMessage("BCCE0002", "This function Only for INT GLN"))
 	}
 
-	// Query
+	// Delete
 	err = stub.DelState(qArgs.LocalGlnXchrInfUnqno)
 	if err != nil {
-		return shim.Error(fmt.Sprintf("Delete Error :\n%s\n", err))
+		return shim.Error(errMessage("BCCE0011", err))
 	}
+
+	logger.Info("Delete Complete")
 	return shim.Success(nil)
 }
 
@@ -280,12 +287,15 @@ func (t *fxRateCC) deleteStateHistory(stub shim.ChaincodeStubInterface, args []s
 	}
 
 	// Delete
-	for i := 0; i < len(dataList); i++ {
+	count := len(dataList)
+	for i := 0; i < count; i++ {
 		err = stub.DelState(dataList[i].LocalGlnXchrInfUnqno)
 		if err != nil {
-			return shim.Error(fmt.Sprintf("Delete Error :\n%s\n", err))
+			return shim.Error(errMessage("BCCE0011", err))
 		}
 	}
+
+	logger.Info("Delete Complete -", count)
 	return shim.Success(nil)
 }
 

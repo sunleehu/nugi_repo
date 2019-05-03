@@ -26,6 +26,7 @@ func errMessage(code string, message interface{}) string {
 		"BCCE0008": "Query Error",
 		"BCCE0009": "CouchDB Insert Error",
 		"BCCE0010": "CouchDB Update Error",
+		"BCCE0011": "CouchDB Delete Error",
 	}
 
 	eobj := errorObj{code, errList[code], message}

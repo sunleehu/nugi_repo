@@ -37,7 +37,7 @@
     },
     "requiredPeerCount": 1,
     "maxPeerCount": 3,
-    "blockToLive": 1000,
+    "blockToLive": 100000,
     "memberOnlyRead": true
   },
   {
@@ -78,7 +78,7 @@
     },
     "requiredPeerCount": 1,
     "maxPeerCount": 3,
-    "blockToLive": 1000,
+    "blockToLive": 100000,
     "memberOnlyRead": true
   }
 ]

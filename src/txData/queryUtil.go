@@ -2,16 +2,44 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	pb "github.com/hyperledger/fabric/protos/peer"
 )
 
-var defaultPageSize = 100
+func getDataByQueryString(stub shim.ChaincodeStubInterface, queryString string) ([]pubData, error) {
+
+	logger.Debug("QueryString :", queryString)
+	// Get Query Result
+	resultsIterator, err := stub.GetQueryResult(queryString)
+	if err != nil {
+		return nil, err
+	}
+	defer resultsIterator.Close()
+
+	// Query Result Iterator
+	var dataList []pubData
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil {
+			return nil, err
+		}
+
+		var data pubData
+		err = json.Unmarshal([]byte(queryResponse.Value), &data)
+		if err != nil {
+			return nil, err
+		}
+		dataList = append(dataList, data)
+	}
+	return dataList, nil
+}
 
 func getQueryResultForQueryString(stub shim.ChaincodeStubInterface, queryString string) ([]byte, error) {
-	logger.Debug("QueryString:", queryString)
+
+	logger.Debug("QueryString :", queryString)
 	// Get Query Result
 	resultsIterator, err := stub.GetQueryResult(queryString)
 	if err != nil {
@@ -40,14 +68,12 @@ func getQueryResultForQueryString(stub shim.ChaincodeStubInterface, queryString 
 	}
 	buffer.WriteString("]")
 
-	logger.Debug("Query Result:", buffer.String())
-
 	return buffer.Bytes(), nil
 }
 
 func getQueryResultForQueryStringWithPagination(stub shim.ChaincodeStubInterface, queryString, bookmark string, pageSize int32) ([]byte, error) {
 
-	fmt.Printf("- getQueryResultForQueryString queryString:\n%s\n", queryString)
+	logger.Debug("QueryString :", queryString)
 
 	resultsIterator, responseMetadata, err := stub.GetQueryResultWithPagination(queryString, pageSize, bookmark)
 	if err != nil {
@@ -61,10 +87,7 @@ func getQueryResultForQueryStringWithPagination(stub shim.ChaincodeStubInterface
 	}
 
 	bufferWithPaginationInfo := addPaginationMetadataToQueryResults(buffer, responseMetadata)
-
-	fmt.Printf("- getQueryResultForQueryString queryResult:\n%s\n", bufferWithPaginationInfo.String())
-
-	return buffer.Bytes(), nil
+	return bufferWithPaginationInfo.Bytes(), nil
 }
 
 func constructQueryResponseFromIterator(resultsIterator shim.StateQueryIteratorInterface) (*bytes.Buffer, error) {
@@ -157,7 +180,8 @@ func multiQueryMaker(key string, data []string) string {
 }
 
 func getResultForPublicData(stub shim.ChaincodeStubInterface, queryString, bookmark string, pageSize int32) ([]byte, string, int32, error) {
-	logger.Debug("QueryString:", queryString)
+
+	logger.Debug("QueryString :", queryString)
 	// Get Query Result
 	resultsIterator, responseMetadata, err := stub.GetQueryResultWithPagination(queryString, pageSize, bookmark)
 	if err != nil {
@@ -188,13 +212,12 @@ func getResultForPublicData(stub shim.ChaincodeStubInterface, queryString, bookm
 
 	newBookmark := responseMetadata.GetBookmark()
 	recordCnt := responseMetadata.GetFetchedRecordsCount()
-	logger.Debug("Query Result:", buffer.String())
-
 	return buffer.Bytes(), newBookmark, recordCnt, nil
 }
 
 func getPrivQueryResultForQueryString(stub shim.ChaincodeStubInterface, collection, queryString string) ([]byte, error) {
-	logger.Debug("QueryString:", queryString)
+
+	logger.Debug("QueryString :", queryString)
 
 	// Get Query Result
 	resultsIterator, err := stub.GetPrivateDataQueryResult(collection, queryString)
@@ -222,8 +245,6 @@ func getPrivQueryResultForQueryString(stub shim.ChaincodeStubInterface, collecti
 		comma = true
 	}
 
-	logger.Debug("Query Result:", buffer.String())
-
 	return buffer.Bytes(), nil
 }
 
@@ -244,9 +265,20 @@ func getPrivateDataForKeys(stub shim.ChaincodeStubInterface, collection string, 
 			comma = true
 		}
 	}
-	logger.Debug("Get Private Data Result: ", buffer.String())
 
 	return buffer.Bytes(), nil
+}
+
+func deletePrivateDataForKeys(stub shim.ChaincodeStubInterface, collection string, keys []string) error {
+
+	for i := 0; i < len(keys); i++ {
+		err := stub.DelPrivateData(collection, keys[i])
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // func getPrivQueryResultAndKeys(stub shim.ChaincodeStubInterface, collection, queryString string, keys []string) ([]byte, error) {

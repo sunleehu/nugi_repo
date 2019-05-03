@@ -18,7 +18,7 @@ import (
 )
 
 var logger = shim.NewLogger("TXDATA")
-var DEFAULT_PAGE_SIZE int32 = 100
+var defaultPageSize int32 = 100
 
 type txDataCC struct {
 }
@@ -36,8 +36,9 @@ func (t *txDataCC) Init(stub shim.ChaincodeStubInterface) pb.Response {
 
 func (t *txDataCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	function, args := stub.GetFunctionAndParameters()
-	logger.Info("Invoke is running", function)
-	logger.Info("Args: ", args)
+	fmt.Println()
+	logger.Info("Func :", function)
+	logger.Info("Args :", args)
 
 	// Handle different functions
 	if function == "puttxdata" {
@@ -46,6 +47,10 @@ func (t *txDataCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return t.getTxData(stub, args)
 	} else if function == "gettxdatahistory" {
 		return t.getTxDataHistory(stub, args)
+	} else if function == "delstate" {
+		return t.deleteState(stub, args)
+	} else if function == "delstatehistory" {
+		return t.deleteStateHistory(stub, args)
 	}
 	// } else if function == "setLogLevel" {
 	// 	return setLogLevel(args[0])
@@ -65,7 +70,7 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 	if err != nil {
 		return shim.Error(errMessage("BCCE0005", "GET transient Data Error"))
 	}
-	logger.Debug("Transient Args : ", string(privData["args"]))
+	logger.Info("Transient Args : ", string(privData["args"]))
 	var txdata []transaction
 	err = json.Unmarshal(privData["args"], &txdata)
 	if err != nil {
@@ -194,10 +199,9 @@ func (t *txDataCC) putTxData(stub shim.ChaincodeStubInterface, args []string) pb
 			return shim.Error(errMessage("BCCE0004", e))
 		}
 
-		logger.Info("TRANSACTION_DATA_SAVED")
-		//logger.Debug("SAVED_DATA : ", string(dat))
 		// EVENT!!!
 		stub.SetEvent("TRANSACTION_DATA_SAVED", dat)
+		logger.Infof("[EVENT] TRANSACTION_DATA_SAVED : \n%s\n", string(dat))
 	}
 
 	logger.Info("Insert Complete")
@@ -210,7 +214,7 @@ func (t *txDataCC) getTxData(stub shim.ChaincodeStubInterface, args []string) pb
 	// Check arguments
 	var qArgs queryArgs
 	if len(args) < 1 {
-		return shim.Error(errMessage("BCCE0007", "empty args"))
+		return shim.Error(errMessage("BCCE0007", "Args is empty"))
 	}
 	err := json.Unmarshal([]byte(args[0]), &qArgs)
 	if err != nil {
@@ -274,7 +278,8 @@ func (t *txDataCC) getTxData(stub shim.ChaincodeStubInterface, args []string) pb
 	resList = append(resList, queryResult)
 	result := queryResponseStructMaker(resList, "", 1)
 
-	logger.Info("Query Success")
+	logger.Info("Query Complete")
+	logger.Info(string(result))
 	return shim.Success(result)
 }
 
@@ -296,6 +301,16 @@ func (t *txDataCC) getTxDataHistory(stub shim.ChaincodeStubInterface, args []str
 	if len(strings.TrimSpace(qArgs.ReqStartTime)) != 14 || len(strings.TrimSpace(qArgs.ReqEndTime)) != 14 {
 		return shim.Error(errMessage("BCCE0007", `You should fill out date data "YYYYMMDDhhmmss"`))
 	}
+	divcd := ""
+	if qArgs.LcGlnUnqCd != "" {
+		if qArgs.DivCd == "02" {
+			divcd = "TO"
+		} else if qArgs.DivCd == "01" {
+			divcd = "FROM"
+		} else {
+			return shim.Error(errMessage("BCCE0005", "You must fill out DIV_CD"))
+		}
+	}
 
 	// Check Identity
 	attr, m := checkGlnIntl(stub)
@@ -311,22 +326,10 @@ func (t *txDataCC) getTxDataHistory(stub shim.ChaincodeStubInterface, args []str
 		}
 	}
 
-	// Valid DIV_CODE
-	divcd := ""
-	if qArgs.LcGlnUnqCd != "" {
-		if qArgs.DivCd == "02" {
-			divcd = "TO"
-		} else if qArgs.DivCd == "01" {
-			divcd = "FROM"
-		} else {
-			return shim.Error(errMessage("BCCE0005", "You must fill out DIV_CD"))
-		}
-	}
-
 	//Default Size 100
 	pgs := qArgs.PageSize
 	if pgs == 0 {
-		pgs = DEFAULT_PAGE_SIZE
+		pgs = defaultPageSize
 	}
 
 	// Query
@@ -369,10 +372,133 @@ func (t *txDataCC) getTxDataHistory(stub shim.ChaincodeStubInterface, args []str
 		}
 	}
 	privResp := queryResponseStructMaker(respList, bookmark, recordCnt)
-	logger.Info("Query Success")
+	logger.Info("Query Complete")
+	logger.Info(string(privResp))
 	return shim.Success(privResp)
 }
 
-// func (t *txDataCC) updateTxLog(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-// 	return shim.Success(nil)
-// }
+func (t *txDataCC) deleteState(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+
+	// Check Arguments
+	if len(args) == 0 {
+		return shim.Error(errMessage("BCCE0007", "Args is empty"))
+	}
+	var qArgs queryArgs
+	err := json.Unmarshal([]byte(args[0]), &qArgs)
+	if err != nil {
+		return shim.Error(errMessage("BCCE0003", err))
+	}
+	if isBlank(qArgs.GlnTxNo) {
+		return shim.Error(errMessage("BCCE0007", "You must fill out the string GLN_TX_NO"))
+	}
+
+	// Check Identity
+	err = cid.AssertAttributeValue(stub, "ACC_ROLE", "INT")
+	if err != nil {
+		return shim.Error(errMessage("BCCE0002", "This function Only for INT GLN"))
+	}
+
+	// Get State
+	hash := sha256Hash(qArgs.GlnTxNo)
+	pubQueryRes, err := stub.GetState(hash)
+	if err != nil {
+		return shim.Error(errMessage("BCCE0008", err))
+	}
+	if pubQueryRes == nil {
+		logger.Info("Delete Complete")
+		return shim.Success(nil)
+	}
+	var pData pubData
+	err = json.Unmarshal(pubQueryRes, &pData)
+	if err != nil {
+		return shim.Error(errMessage("BCCE0003", err))
+	}
+
+	// Delete State
+	err = stub.DelState(hash)
+	if err != nil {
+		return shim.Error(errMessage("BCCE0011", err))
+	}
+
+	// Delete Private State
+	colName := collectionMaker(pData.From, pData.To)
+	err = stub.DelPrivateData(colName, hash)
+	if err != nil {
+		return shim.Error(errMessage("BCCE0011", err))
+	}
+
+	logger.Info("Delete Complete")
+	return shim.Success(nil)
+}
+
+func (t *txDataCC) deleteStateHistory(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+
+	// Check Arguments
+	if len(args) == 0 {
+		return shim.Error(errMessage("BCCE0007", "Args is empty"))
+	}
+	var qArgs queryArgs
+	err := json.Unmarshal([]byte(args[0]), &qArgs)
+	if err != nil {
+		return shim.Error(errMessage("BCCE0003", err))
+	}
+	if checkAtoi(qArgs.ReqStartTime) || checkAtoi(qArgs.ReqEndTime) {
+		return shim.Error(errMessage("BCCE0007", "You must fill out the string number ReqStratTime and ReqEndTime"))
+	}
+	if len(strings.TrimSpace(qArgs.ReqStartTime)) != 14 || len(strings.TrimSpace(qArgs.ReqEndTime)) != 14 {
+		return shim.Error(errMessage("BCCE0007", `You should fill out date data "YYYYMMDDhhmmss"`))
+	}
+	divcd := ""
+	if qArgs.LcGlnUnqCd != "" {
+		if qArgs.DivCd == "02" {
+			divcd = "TO"
+		} else if qArgs.DivCd == "01" {
+			divcd = "FROM"
+		} else {
+			return shim.Error(errMessage("BCCE0005", "You must fill out DIV_CD"))
+		}
+	}
+
+	// Check identity
+	err = cid.AssertAttributeValue(stub, "ACC_ROLE", "INT")
+	if err != nil {
+		return shim.Error(errMessage("BCCE0002", "This function Only for INT GLN"))
+	}
+
+	// Query
+	queryString := ""
+	if divcd == "" {
+		queryString = fmt.Sprintf(`{"selector": {"$and":[{"DATE":{"$gte": "%s"}},{"DATE":{"$lte": "%s"}}]}, "use_index":["indexDateDoc", "indexDate"]}`, qArgs.ReqStartTime, qArgs.ReqEndTime)
+	} else {
+		queryString = fmt.Sprintf(`{"selector": {"$and":[{"%s": "%s"},{"DATE":{"$gte": "%s"}},{"DATE":{"$lte": "%s"}}]}, "use_index":["indexDate%sDoc", "indexDate%s"]}`, divcd, qArgs.LcGlnUnqCd, qArgs.ReqStartTime, qArgs.ReqEndTime, divcd, divcd)
+	}
+	dataList, err := getDataByQueryString(stub, queryString)
+	if err != nil {
+		return shim.Error(errMessage("BCCE0008", err))
+	}
+
+	// Delete State & Sort Collection Name
+	kvList := make(map[string][]string)
+	count := len(dataList)
+	for i := 0; i < count; i++ {
+		err = stub.DelState(dataList[i].GlnTxHash)
+		if err != nil {
+			return shim.Error(errMessage("BCCE0011", err))
+		}
+		colName := collectionMaker(dataList[i].From, dataList[i].To)
+		kvList[colName] = append(kvList[colName], dataList[i].GlnTxHash)
+	}
+
+	// Delete Private State
+	colNameList := reflect.ValueOf(kvList).MapKeys()
+	for i := 0; i < len(colNameList); i++ {
+		colName := colNameList[i].String()
+		err = deletePrivateDataForKeys(stub, colName, kvList[colName])
+		if err != nil {
+			return shim.Error(errMessage("BCCE0011", err))
+		}
+	}
+
+	logger.Info("Delete Complete -", count)
+	return shim.Success(nil)
+}

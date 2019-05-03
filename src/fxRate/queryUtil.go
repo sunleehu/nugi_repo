@@ -11,7 +11,7 @@ import (
 
 func getDataByQueryString(stub shim.ChaincodeStubInterface, queryString string) ([]exchangeRate, error) {
 
-	logger.Debug("QueryString:", queryString)
+	logger.Debug("QueryString :", queryString)
 	// Get Query Result
 	resultsIterator, err := stub.GetQueryResult(queryString)
 	if err != nil {
@@ -39,7 +39,7 @@ func getDataByQueryString(stub shim.ChaincodeStubInterface, queryString string) 
 
 func getQueryResultForQueryString(stub shim.ChaincodeStubInterface, queryString string) ([]byte, error) {
 
-	logger.Debug("QueryString:", queryString)
+	logger.Debug("QueryString :", queryString)
 
 	// Get Query Result
 	resultsIterator, err := stub.GetQueryResult(queryString)
@@ -67,14 +67,12 @@ func getQueryResultForQueryString(stub shim.ChaincodeStubInterface, queryString 
 		comma = true
 	}
 	buffer.WriteString("]")
-
-	logger.Debug("Query Result:", buffer.String())
 	return buffer.Bytes(), nil
 }
 
 func getQueryResultForQueryStringWithPagination(stub shim.ChaincodeStubInterface, queryString string, pageSize int32, bookmark string) ([]byte, error) {
 
-	logger.Debug("QueryString :\n%s\n", queryString)
+	logger.Debug("QueryString :", queryString)
 
 	resultsIterator, responseMetadata, err := stub.GetQueryResultWithPagination(queryString, pageSize, bookmark)
 	if err != nil {
@@ -88,8 +86,6 @@ func getQueryResultForQueryStringWithPagination(stub shim.ChaincodeStubInterface
 	}
 
 	bufferWithPaginationInfo := addPaginationMetadataToQueryResults(buffer, responseMetadata)
-
-	logger.Debug("QueryResults :\n%s\n", bufferWithPaginationInfo.String())
 	return bufferWithPaginationInfo.Bytes(), nil
 }
 
