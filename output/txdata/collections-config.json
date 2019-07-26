@@ -11,12 +11,6 @@
         {
           "role": {
             "name": "member",
-            "mspId": "SicothOrgMSP"
-          }
-        },
-        {
-          "role": {
-            "name": "member",
             "mspId": "GintwwOrgMSP"
           }
         }
@@ -28,9 +22,6 @@
           },
           {
             "signed-by": 1
-          },
-          {
-            "signed-by": 2
           }
         ]
       }
@@ -41,18 +32,12 @@
     "memberOnlyRead": true
   },
   {
-    "name": "KOEXKRTSIBTW",
+    "name": "KOEXKRNSTSJP",
     "policy": {
       "identities": [{
           "role": {
             "name": "member",
             "mspId": "KoexkrOrgMSP"
-          }
-        },
-        {
-          "role": {
-            "name": "member",
-            "mspId": "TsibtwOrgMSP"
           }
         },
         {
@@ -69,9 +54,38 @@
           },
           {
             "signed-by": 1
+          }
+        ]
+      }
+    },
+    "requiredPeerCount": 1,
+    "maxPeerCount": 3,
+    "blockToLive": 500000,
+    "memberOnlyRead": true
+  },
+  {
+    "name": "KOEXKRVIMOVN",
+    "policy": {
+      "identities": [{
+          "role": {
+            "name": "member",
+            "mspId": "KoexkrOrgMSP"
+          }
+        },
+        {
+          "role": {
+            "name": "member",
+            "mspId": "GintwwOrgMSP"
+          }
+        }
+      ],
+      "policy": {
+        "1-of": [
+          {
+            "signed-by": 0
           },
           {
-            "signed-by": 2
+            "signed-by": 1
           }
         ]
       }
