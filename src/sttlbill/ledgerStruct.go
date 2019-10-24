@@ -32,6 +32,15 @@ type glnbill struct {
 	SettlementFileName string `json:"SETTLEMENT_FILE_NAME"`
 	FeeFileName        string `json:"FEE_FILE_NAME"`
 	Txid               string `json:"TX_ID"`
+	//2019.10.16 이선혁 추가 
+	SndrTxCnt		   string `json:"SNDR_TX_CNT"`
+	RcvrTxCnt 		   string `json:"RCVR_TX_CNT"`
+	BpLocalGlnCd	   string `json:"BP_LOCAL_GLN_CD"`
+	SpAdjCurCd		   string `json:"SP_ADJ_CUR_CD"`
+	SndrCurAdjAmt	   string `json:"SNDR_CUR_ADJ_AMT"`
+	RcvrCurAdjAmt	   string `json:"RCVR_CUR_ADJ_AMT"`
+	SndrCurFeAdjAmt	   string `json:"SNDR_CUR_FE_ADJ_AMT"`
+	RcvrCurFeAdjAmt	   string `json:"RCVR_CUR_FE_ADJ_AMT"`
 }
 
 // Query JSON struct
