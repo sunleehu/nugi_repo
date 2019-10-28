@@ -41,6 +41,14 @@ type glnbill struct {
 	RcvrCurAdjAmt	   string `json:"RCVR_CUR_ADJ_AMT"`
 	SndrCurFeAdjAmt	   string `json:"SNDR_CUR_FE_ADJ_AMT"`
 	RcvrCurFeAdjAmt	   string `json:"RCVR_CUR_FE_ADJ_AMT"`
+	AdjFileNm 		   string `json:"ADJ_FILE_NM"`
+	FeFileNm		   string `json:"FE_FILE_NM"`
+	BlcTxId			   string `json:"BLC_TX_ID"`
+	RgDtm			   string `json:"RG_DTM"`
+	RgrId			   string `json:"RGR_ID"`
+	ChDtm			   string `json:"CH_DTM"`
+	ChrId			   string `json:"CHR_ID"`
+
 }
 
 // Query JSON struct
