@@ -35,8 +35,8 @@ type transaction struct {
 	
 	//2019.10.31 이선혁 added
 	OriRcptNo			string `json:"ORI_RCPT_NO"`
-	RcvrCurAdjAmt		string `json:"RCVR_CUR_ADJ_AMT"`
-	SndrCurAdjAmt		string `json:"SNDR_CUR_ADJ_AMT"`
+	RcvrCurAdjAmt		float64 `json:"RCVR_CUR_ADJ_AMT"`
+	SndrCurAdjAmt		float64 `json:"SNDR_CUR_ADJ_AMT"`
 }
 
 type feeList struct {
