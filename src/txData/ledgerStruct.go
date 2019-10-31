@@ -32,6 +32,11 @@ type transaction struct {
 	SndrCurMbrPayAmt float64   `json:"SNDR_CUR_MBR_PAY_AMT"`
 	TxID             string    `json:"TX_ID"`
 	FeeData          []feeList `json:"FEE_DATA"`
+	
+	//2019.10.31 이선혁 added
+	OriRcptNo			string `json:"ORI_RCPT_NO"`
+	RcvrCurAdjAmt		string `json:"RCVR_CUR_ADJ_AMT"`
+	SndrCurAdjAmt		string `json:"SNDR_CUR_ADJ_AMT"`
 }
 
 type feeList struct {
