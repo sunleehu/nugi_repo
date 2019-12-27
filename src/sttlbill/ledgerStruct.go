@@ -68,11 +68,15 @@ type queryArgs struct {
 	AdjPblNo     string `json:"ADJ_PBL_NO"`     //정산요청번호
 	ReqStartTime string `json:"REQ_START_TIME"` // 기간 시작값
 	ReqEndTime   string `json:"REQ_END_TIME"`   // 기간 끝 값
-	LcGlnUnqCd   string `json:"LOCALGLN_CODE"`  // Local GLN 코드
+	LcGlnUnqCd   string `json:"LOCALGLN_CODE"`  // Local GLN 코드 -- 이건은 요청하는 gln_code 가 회원인지 확인할때만 사용하도록 변경 
 	DivCd        string `json:"DIV_CODE"`       // 구분 코드
 	DeTpDvCd     string `json:"DE_TP_DV_CD"`    // 정상 취소 구분 코드
 	PageSize     int32  `json:"PAGE_COUNT"`
 	BookMark     string `json:"PAGE_NEXT_ID"`
+	SpLocalGlnCd string `json:"SEL_SSP_CD"`		//2019.12.27 추가 LOCAL_GLN_CODE 로 조회 가능하도록 ..
+	BpLocalGlnCd string `json:"LOCALGLN_CODE"`	//2019.12.27 json에서 같은 값을 꺼내는 이유는 BP_LOCAL_CODE는 조회기관 KOEXKR 의 조건이 되어야 한다. 
+	//2019.12.27 요건 SBP에서 SSP코드로 조회하는 기능 블록체인 입장에서 BP_LOCAL_CODE == MSP(KOEXKR)만 허용 
+	//실제 조회 대상은 LOCAL_GLN_CD == SEL_SSP_CD(TOSSKR) 이다 
 }
 
 // Event Payload Header Json
