@@ -23,6 +23,7 @@ var logger = shim.NewLogger("STTLBILL")
 var defaultPageSize int32 = 100
 
 func main() {
+	logger.SetLevel(shim.LogDebug)
 	err := shim.Start(new(glnBillCC))
 	if err != nil {
 		logger.Error("Error starting sttlbill chaincode : %s", err)
@@ -221,7 +222,9 @@ func (t *glnBillCC) getBillHistory(stub shim.ChaincodeStubInterface, args []stri
 		return shim.Error(errMessage("BCCE0007", "Args is empty"))
 	}
 	var qArgs queryArgs
+	
 	err := json.Unmarshal([]byte(args[0]), &qArgs)
+	
 	if err != nil {
 		return shim.Error(errMessage("BCCE0003", err))
 	}
@@ -231,7 +234,9 @@ func (t *glnBillCC) getBillHistory(stub shim.ChaincodeStubInterface, args []stri
 	if len(strings.TrimSpace(qArgs.ReqStartTime)) != 8 || len(strings.TrimSpace(qArgs.ReqEndTime)) != 8 {
 		return shim.Error(errMessage("BCCE0007", `You should fill out date data "YYYYMMDD"`))
 	}
-
+	
+	qArgs.BpLocalGlnCd = qArgs.LcGlnUnqCd
+	
 	// Check Identity
 	attr, m := checkGlnIntl(stub)
 	if m != "" {
@@ -241,7 +246,7 @@ func (t *glnBillCC) getBillHistory(stub shim.ChaincodeStubInterface, args []stri
 	} else {
 		err = cid.AssertAttributeValue(stub, "LCL_UNQ_CD", qArgs.LcGlnUnqCd)//LcGlnUnqCd 여기서만 사용 
 		if err != nil {
-			return shim.Error(errMessage("BCCE0002", "Tx Maker and LclGlnUnqCd does not match"))
+			return shim.Error(errMessage("BCCE0002", "Tx Maker and LclGlnUnqCd does not match. LclGlnUnqCd: " + qArgs.LcGlnUnqCd + " qArgs.BpLocalGlnCd:"+ qArgs.BpLocalGlnCd))
 		}
 	}
 
