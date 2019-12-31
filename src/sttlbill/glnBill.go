@@ -242,6 +242,9 @@ func (t *glnBillCC) getBillHistory(stub shim.ChaincodeStubInterface, args []stri
 	if m != "" {
 		return shim.Error(errMessage("BCCE0005", m))
 	}
+
+	qArgs.BpLocalGlnCd = qArgs.LcGlnUnqCd
+
 	if attr {
 	} else {
 		err = cid.AssertAttributeValue(stub, "LCL_UNQ_CD", qArgs.LcGlnUnqCd)//LcGlnUnqCd 여기서만 사용 
