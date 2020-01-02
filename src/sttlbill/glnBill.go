@@ -186,14 +186,36 @@ func (t *glnBillCC) getBill(stub shim.ChaincodeStubInterface, args []string) pb.
 			return shim.Error(errMessage("BCCE0002", "Tx Maker and LclGlnUnqCd does not match"))
 		}
 	}
-	//ADJ_PBL_NO 의 값이 없으면 
+	//ADJ_PBL_NO 의 값이 없으면
 	if isBlank(qArgs.AdjPblNo) {
 		return t.getBillHistory(stub, args)
+	} else {
+		// Query
+		var queryString string
+		// AS-IS BEFORE 2019.12.27 if qArgs.LcGlnUnqCd == "" 조건 변경 이미 빈값이면 바로 전단계에서 끝남
+		// TO-BE SINCE 2019.12.27 조회 SEL_SSP_CD(gateway 용 필드 ) 빈값이면 SSP 조회가 아니므로 lcoal_gln_cd 가 해당하는 건만 보여준다.
+		// Page Size
+		pgs := qArgs.PageSize
+		if pgs == 0 {
+			pgs = defaultPageSize
+		}
+		//local_gln_cd, bp_local_gln_cd둘중에 하나라도 조건이 만족하는것만 보여준다.
+		queryString = fmt.Sprintf(`{"selector": {"ADJ_PBL_NO": "%s", "$or":[{"LOCAL_GLN_CD":"%s"},{"BP_LOCAL_GLN_CD":"%s"}]}}`, qArgs.AdjPblNo, qArgs.LcGlnUnqCd, qArgs.LcGlnUnqCd)
+
+		queryResults, err := getQueryResultForQueryStringWithPagination(stub, queryString, pgs, qArgs.BookMark)
+		if err != nil {
+			return shim.Error(errMessage("BCCE0008", err))
+		}
+
+		logger.Info("Query Success")
+		logger.Info(string(queryResults))
+		return shim.Success(queryResults)
 	}
 
 	// Query
 	// queryString := fmt.Sprintf(`{"selector": {"ADJ_PBL_NO": "%s", "LOCAL_GLN_CD":"%s"}}`, qArgs.AdjPblNo, qArgs.LcGlnUnqCd)
 	// queryResults, err := getQueryResultForQueryStringWithPagination(stub, queryString, 1, "")
+	//2020.01.02 이선혁 이부분은 월드스테이트로 부터 키값으로 얻어 온다. 조건의 변경으로 인해 BP_LOCAL_GLN_CD, LOCAL_GLN_CD가 요청 기관에 해당하는게 없다면 데이터를 주지 말아야 한다.
 	state, err := stub.GetState(qArgs.AdjPblNo)
 	if err != nil {
 		return shim.Error(errMessage("BCCE0008", err))
@@ -222,9 +244,9 @@ func (t *glnBillCC) getBillHistory(stub shim.ChaincodeStubInterface, args []stri
 		return shim.Error(errMessage("BCCE0007", "Args is empty"))
 	}
 	var qArgs queryArgs
-	
+
 	err := json.Unmarshal([]byte(args[0]), &qArgs)
-	
+
 	if err != nil {
 		return shim.Error(errMessage("BCCE0003", err))
 	}
@@ -234,22 +256,22 @@ func (t *glnBillCC) getBillHistory(stub shim.ChaincodeStubInterface, args []stri
 	if len(strings.TrimSpace(qArgs.ReqStartTime)) != 8 || len(strings.TrimSpace(qArgs.ReqEndTime)) != 8 {
 		return shim.Error(errMessage("BCCE0007", `You should fill out date data "YYYYMMDD"`))
 	}
-	
+
 	qArgs.BpLocalGlnCd = qArgs.LcGlnUnqCd
-	
+
 	// Check Identity
 	attr, m := checkGlnIntl(stub)
 	if m != "" {
 		return shim.Error(errMessage("BCCE0005", m))
 	}
-
+	//2019.12.31 해당 localgln cd는 bp_local_gln_cd 로 맞춰야함.
 	qArgs.BpLocalGlnCd = qArgs.LcGlnUnqCd
 
 	if attr {
 	} else {
-		err = cid.AssertAttributeValue(stub, "LCL_UNQ_CD", qArgs.LcGlnUnqCd)//LcGlnUnqCd 여기서만 사용 
+		err = cid.AssertAttributeValue(stub, "LCL_UNQ_CD", qArgs.LcGlnUnqCd) //LcGlnUnqCd 여기서만 사용
 		if err != nil {
-			return shim.Error(errMessage("BCCE0002", "Tx Maker and LclGlnUnqCd does not match. LclGlnUnqCd: " + qArgs.LcGlnUnqCd + " qArgs.BpLocalGlnCd:"+ qArgs.BpLocalGlnCd))
+			return shim.Error(errMessage("BCCE0002", "Tx Maker and Localgln_cd does not match. Localgln_cd: "+qArgs.LcGlnUnqCd))
 		}
 	}
 
@@ -261,8 +283,8 @@ func (t *glnBillCC) getBillHistory(stub shim.ChaincodeStubInterface, args []stri
 
 	// Query
 	var queryString string
-	// AS-IS BEFORE 2019.12.27 if qArgs.LcGlnUnqCd == "" 조건 변경 이미 빈값이면 바로 전단계에서 끝남 
-	// TO-BE SINCE 2019.12.27 조회 SEL_SSP_CD(gateway 용 필드 ) 빈값이면 SSP 조회가 아니므로 lcoal_gln_cd 가 해당하는 건만 보여준다. 
+	// AS-IS BEFORE 2019.12.27 if qArgs.LcGlnUnqCd == "" 조건 변경 이미 빈값이면 바로 전단계에서 끝남
+	// TO-BE SINCE 2019.12.27 조회 SEL_SSP_CD(gateway 용 필드 ) 빈값이면 SSP 조회가 아니므로 lcoal_gln_cd 가 해당하는 건만 보여준다.
 	if qArgs.SpLocalGlnCd == "" {
 		// queryString = fmt.Sprintf(`{"selector": {"$and":[{"ADJ_PBL_DT":{"$gte": "%s"}},{"ADJ_PBL_DT":{"$lte": "%s"}}]}, "use_index":["indexDateDoc", "indexDate"]}`, qArgs.ReqStartTime, qArgs.ReqEndTime)
 		queryString = fmt.Sprintf(`{"selector": {"$and":[{"LOCAL_GLN_CD": "%s"},{"ADJ_PBL_DT":{"$gte": "%s"}},{"ADJ_PBL_DT":{"$lte": "%s"}}]}, "use_index":["indexDateLclDoc", "indexDateLcl"]}`, qArgs.BpLocalGlnCd, qArgs.ReqStartTime, qArgs.ReqEndTime)
