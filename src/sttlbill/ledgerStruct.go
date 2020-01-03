@@ -72,7 +72,7 @@ type queryArgs struct {
 	DeTpDvCd     string `json:"DE_TP_DV_CD"`    // 정상 취소 구분 코드
 	PageSize     int32  `json:"PAGE_COUNT"`
 	BookMark     string `json:"PAGE_NEXT_ID"`
-	SpLocalGlnCd string `json:"SEL_SSP_CD"` //2019.12.27 추가 LOCAL_GLN_CODE 로 조회 가능하도록 ..
+	SpLocalGlnCd string `json:"SEL_SP_CD"` //2019.12.27 추가 LOCAL_GLN_CODE 로 조회 가능하도록 ..
 	BpLocalGlnCd string //2019.12.27 json에서 같은 값을 못꺼냄 차후 처리해야함.
 	//2019.12.27 요건 SBP에서 SSP코드로 조회하는 기능 블록체인 입장에서 BP_LOCAL_CODE == MSP(KOEXKR)만 허용
 	//실제 조회 대상은 LOCAL_GLN_CD == SEL_SSP_CD(TOSSKR) 이다

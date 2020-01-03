@@ -11,7 +11,7 @@ import (
 
 func getDataByQueryString(stub shim.ChaincodeStubInterface, queryString string) ([]glnbill, error) {
 
-	logger.Debug("QueryString :", queryString)
+	logger.Info("QueryString :", queryString)
 	// Get Query Result
 	resultsIterator, err := stub.GetQueryResult(queryString)
 	if err != nil {
@@ -73,7 +73,7 @@ func getQueryResultForQueryString(stub shim.ChaincodeStubInterface, queryString 
 
 func getQueryResultForQueryStringWithPagination(stub shim.ChaincodeStubInterface, queryString string, pageSize int32, bookmark string) ([]byte, error) {
 
-	logger.Debug("QueryString :", queryString)
+	logger.Info("QueryString :", queryString)
 
 	resultsIterator, responseMetadata, err := stub.GetQueryResultWithPagination(queryString, pageSize, bookmark)
 	if err != nil {

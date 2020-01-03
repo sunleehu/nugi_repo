@@ -23,7 +23,8 @@ var logger = shim.NewLogger("STTLBILL")
 var defaultPageSize int32 = 100
 
 func main() {
-	logger.SetLevel(shim.LogDebug)
+	//2020.01.03 info level 로 셋팅 
+	logger.SetLevel(shim.LogInfo)
 	err := shim.Start(new(glnBillCC))
 	if err != nil {
 		logger.Error("Error starting sttlbill chaincode : %s", err)
@@ -183,7 +184,8 @@ func (t *glnBillCC) getBill(stub shim.ChaincodeStubInterface, args []string) pb.
 	} else {
 		err = cid.AssertAttributeValue(stub, "LCL_UNQ_CD", qArgs.LcGlnUnqCd)
 		if err != nil {
-			return shim.Error(errMessage("BCCE0002", "Tx Maker and LclGlnUnqCd does not match"))
+			//에러 메시지 수정 localgln_cd 값도 함께 내려준다. 
+			return shim.Error(errMessage("BCCE0002",  "Tx Maker and Localgln_cd does not match. Localgln_cd: "+qArgs.LcGlnUnqCd))
 		}
 	}
 	//ADJ_PBL_NO 의 값이 없으면
@@ -256,9 +258,7 @@ func (t *glnBillCC) getBillHistory(stub shim.ChaincodeStubInterface, args []stri
 	if len(strings.TrimSpace(qArgs.ReqStartTime)) != 8 || len(strings.TrimSpace(qArgs.ReqEndTime)) != 8 {
 		return shim.Error(errMessage("BCCE0007", `You should fill out date data "YYYYMMDD"`))
 	}
-
-	qArgs.BpLocalGlnCd = qArgs.LcGlnUnqCd
-
+	
 	// Check Identity
 	attr, m := checkGlnIntl(stub)
 	if m != "" {
