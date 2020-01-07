@@ -24,7 +24,7 @@ var defaultPageSize int32 = 100
 
 func main() {
 	//2020.01.03 info level 로 셋팅 
-	logger.SetLevel(shim.LogInfo)
+	logger.SetLevel(shim.LogDebug)
 	err := shim.Start(new(glnBillCC))
 	if err != nil {
 		logger.Error("Error starting sttlbill chaincode : %s", err)
@@ -204,7 +204,7 @@ func (t *glnBillCC) getBill(stub shim.ChaincodeStubInterface, args []string) pb.
 		//local_gln_cd, bp_local_gln_cd둘중에 하나라도 조건이 만족하는것만 보여준다.
 		queryString = fmt.Sprintf(`{"selector": {"ADJ_PBL_NO": "%s", "$or":[{"LOCAL_GLN_CD":"%s"},{"BP_LOCAL_GLN_CD":"%s"}]}}`, qArgs.AdjPblNo, qArgs.LcGlnUnqCd, qArgs.LcGlnUnqCd)
 
-		queryResults, err := getQueryResultForQueryStringWithPagination(stub, queryString, pgs, qArgs.BookMark)
+		queryResults, err := getQueryResultForQueryStringWithPagination(stub, queryString, pgs, qArgs.BookMark, nil)
 		if err != nil {
 			return shim.Error(errMessage("BCCE0008", err))
 		}
@@ -292,7 +292,7 @@ func (t *glnBillCC) getBillHistory(stub shim.ChaincodeStubInterface, args []stri
 		// queryString = fmt.Sprintf(`{"selector": {"$and":[{"LOCAL_GLN_CD": "%s"},{"ADJ_PBL_DT":{"$gte": "%s"}},{"ADJ_PBL_DT":{"$lte": "%s"}}]}, "use_index":["indexDateLclDoc", "indexDateLcl"]}`, qArgs.LcGlnUnqCd, qArgs.ReqStartTime, qArgs.ReqEndTime)
 		queryString = fmt.Sprintf(`{"selector": {"$and":[{"BP_LOCAL_GLN_CD":"%s"},{"LOCAL_GLN_CD": "%s"},{"ADJ_PBL_DT":{"$gte": "%s"}},{"ADJ_PBL_DT":{"$lte": "%s"}}]}, "use_index":["indexDateLclDoc", "indexDateLcl"]}`, qArgs.BpLocalGlnCd, qArgs.SpLocalGlnCd, qArgs.ReqStartTime, qArgs.ReqEndTime)
 	}
-	queryResults, err := getQueryResultForQueryStringWithPagination(stub, queryString, pgs, qArgs.BookMark)
+	queryResults, err := getQueryResultForQueryStringWithPagination(stub, queryString, pgs, qArgs.BookMark, qArgs.SpLocalGlnCd)
 	if err != nil {
 		return shim.Error(errMessage("BCCE0008", err))
 	}
