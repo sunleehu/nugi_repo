@@ -135,7 +135,7 @@ func addPaginationMetadataToQueryResults(buffer *bytes.Buffer, responseMetadata 
 	buffer.WriteString("\"")
 	buffer.WriteString(fmt.Sprintf("%v", responseMetadata.FetchedRecordsCount))
 	buffer.WriteString("\"")
-	buffer.WriteString("\"SEL_SP_CD\":")
+	buffer.WriteString(", \"SEL_SP_CD\":")
 	buffer.WriteString("\"")
 	buffer.WriteString(sel_sp_cd)
 	buffer.WriteString("\"")
