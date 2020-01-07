@@ -72,7 +72,7 @@ func getQueryResultForQueryString(stub shim.ChaincodeStubInterface, queryString 
 }
 
 func getQueryResultForQueryStringWithPagination(stub shim.ChaincodeStubInterface, queryString string, pageSize int32, bookmark string, spLocalGlnCd string) ([]byte, error) {
-	logger.Debug("getQueryResultForQueryStringWithPagination >>>> " + spLocalGlnCd)
+
 	logger.Info("QueryString :", queryString)
 
 	resultsIterator, responseMetadata, err := stub.GetQueryResultWithPagination(queryString, pageSize, bookmark)
@@ -137,7 +137,7 @@ func addPaginationMetadataToQueryResults(buffer *bytes.Buffer, responseMetadata 
 	buffer.WriteString("\"")
 	buffer.WriteString(", \"SEL_SP_CD\":")
 	buffer.WriteString("\"")
-	buffer.WriteString(sel_sp_cd)
+	buffer.WriteString(spLocalGlnCd)
 	buffer.WriteString("\"")
 	buffer.WriteString(", \"PAGE_NEXT_ID\":")
 	buffer.WriteString("\"")
