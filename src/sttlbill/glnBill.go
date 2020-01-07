@@ -23,7 +23,7 @@ var logger = shim.NewLogger("STTLBILL")
 var defaultPageSize int32 = 100
 
 func main() {
-	//2020.01.03 info level 로 셋팅 
+	//2020.01.03 info level 로 셋팅
 	logger.SetLevel(shim.LogDebug)
 	err := shim.Start(new(glnBillCC))
 	if err != nil {
@@ -184,8 +184,8 @@ func (t *glnBillCC) getBill(stub shim.ChaincodeStubInterface, args []string) pb.
 	} else {
 		err = cid.AssertAttributeValue(stub, "LCL_UNQ_CD", qArgs.LcGlnUnqCd)
 		if err != nil {
-			//에러 메시지 수정 localgln_cd 값도 함께 내려준다. 
-			return shim.Error(errMessage("BCCE0002",  "Tx Maker and Localgln_cd does not match. Localgln_cd: "+qArgs.LcGlnUnqCd))
+			//에러 메시지 수정 localgln_cd 값도 함께 내려준다.
+			return shim.Error(errMessage("BCCE0002", "Tx Maker and Localgln_cd does not match. Localgln_cd: "+qArgs.LcGlnUnqCd))
 		}
 	}
 	//ADJ_PBL_NO 의 값이 없으면
@@ -204,7 +204,7 @@ func (t *glnBillCC) getBill(stub shim.ChaincodeStubInterface, args []string) pb.
 		//local_gln_cd, bp_local_gln_cd둘중에 하나라도 조건이 만족하는것만 보여준다.
 		queryString = fmt.Sprintf(`{"selector": {"ADJ_PBL_NO": "%s", "$or":[{"LOCAL_GLN_CD":"%s"},{"BP_LOCAL_GLN_CD":"%s"}]}}`, qArgs.AdjPblNo, qArgs.LcGlnUnqCd, qArgs.LcGlnUnqCd)
 
-		queryResults, err := getQueryResultForQueryStringWithPagination(stub, queryString, pgs, qArgs.BookMark, nil)
+		queryResults, err := getQueryResultForQueryStringWithPagination(stub, queryString, pgs, qArgs.BookMark, "")
 		if err != nil {
 			return shim.Error(errMessage("BCCE0008", err))
 		}
@@ -258,7 +258,7 @@ func (t *glnBillCC) getBillHistory(stub shim.ChaincodeStubInterface, args []stri
 	if len(strings.TrimSpace(qArgs.ReqStartTime)) != 8 || len(strings.TrimSpace(qArgs.ReqEndTime)) != 8 {
 		return shim.Error(errMessage("BCCE0007", `You should fill out date data "YYYYMMDD"`))
 	}
-	
+
 	// Check Identity
 	attr, m := checkGlnIntl(stub)
 	if m != "" {

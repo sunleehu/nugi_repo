@@ -71,8 +71,8 @@ func getQueryResultForQueryString(stub shim.ChaincodeStubInterface, queryString 
 	return buffer.Bytes(), nil
 }
 
-func getQueryResultForQueryStringWithPagination(stub shim.ChaincodeStubInterface, queryString string, pageSize int32, bookmark string, sel_sp_cd string) ([]byte, error) {
-	logger.Debug("getQueryResultForQueryStringWithPagination >>>> " + sel_sp_cd)
+func getQueryResultForQueryStringWithPagination(stub shim.ChaincodeStubInterface, queryString string, pageSize int32, bookmark string, spLocalGlnCd string) ([]byte, error) {
+	logger.Debug("getQueryResultForQueryStringWithPagination >>>> " + spLocalGlnCd)
 	logger.Info("QueryString :", queryString)
 
 	resultsIterator, responseMetadata, err := stub.GetQueryResultWithPagination(queryString, pageSize, bookmark)
@@ -85,8 +85,8 @@ func getQueryResultForQueryStringWithPagination(stub shim.ChaincodeStubInterface
 	if err != nil {
 		return nil, err
 	}
-	//2020.01.07 이선혁 인자 추가 
-	bufferWithPaginationInfo := addPaginationMetadataToQueryResults(buffer, responseMetadata, sel_sp_cd)
+	//2020.01.07 이선혁 인자 추가
+	bufferWithPaginationInfo := addPaginationMetadataToQueryResults(buffer, responseMetadata, spLocalGlnCd)
 	return bufferWithPaginationInfo.Bytes(), nil
 }
 
@@ -94,7 +94,7 @@ func constructQueryResponseFromIterator(resultsIterator shim.StateQueryIteratorI
 	// buffer is a JSON array containing QueryResults
 	var buffer bytes.Buffer
 	buffer.WriteString("{\"BC_RES_DATA\":[")
-	
+
 	bArrayMemberAlreadyWritten := false
 	for resultsIterator.HasNext() {
 		queryResponse, err := resultsIterator.Next()
@@ -114,21 +114,22 @@ func constructQueryResponseFromIterator(resultsIterator shim.StateQueryIteratorI
 	return &buffer, nil
 }
 
-func addPaginationMetadataToQueryResults(buffer *bytes.Buffer, responseMetadata *pb.QueryResponseMetadata) *bytes.Buffer {
+// func addPaginationMetadataToQueryResults(buffer *bytes.Buffer, responseMetadata *pb.QueryResponseMetadata) *bytes.Buffer {
 
-	buffer.WriteString("\"PAGE_COUNT\":")
-	buffer.WriteString("\"")
-	buffer.WriteString(fmt.Sprintf("%v", responseMetadata.FetchedRecordsCount))
-	buffer.WriteString("\"")
-	buffer.WriteString(", \"PAGE_NEXT_ID\":")
-	buffer.WriteString("\"")
-	buffer.WriteString(responseMetadata.Bookmark)
-	buffer.WriteString("\"}")
+// 	buffer.WriteString("\"PAGE_COUNT\":")
+// 	buffer.WriteString("\"")
+// 	buffer.WriteString(fmt.Sprintf("%v", responseMetadata.FetchedRecordsCount))
+// 	buffer.WriteString("\"")
+// 	buffer.WriteString(", \"PAGE_NEXT_ID\":")
+// 	buffer.WriteString("\"")
+// 	buffer.WriteString(responseMetadata.Bookmark)
+// 	buffer.WriteString("\"}")
 
-	return buffer
-}
-//2020.01.07 이선혁 SEL_SP_CD 추가 리턴 
-func addPaginationMetadataToQueryResults(buffer *bytes.Buffer, responseMetadata *pb.QueryResponseMetadata,  sel_sp_cd string) *bytes.Buffer {
+// 	return buffer
+// }
+
+//2020.01.07 이선혁 SEL_SP_CD 추가 리턴
+func addPaginationMetadataToQueryResults(buffer *bytes.Buffer, responseMetadata *pb.QueryResponseMetadata, spLocalGlnCd string) *bytes.Buffer {
 
 	buffer.WriteString("\"PAGE_COUNT\":")
 	buffer.WriteString("\"")
@@ -142,9 +143,10 @@ func addPaginationMetadataToQueryResults(buffer *bytes.Buffer, responseMetadata 
 	buffer.WriteString("\"")
 	buffer.WriteString(responseMetadata.Bookmark)
 	buffer.WriteString("\"}")
-	logger.Debug("addPaginationMetadataToQueryResults complete buffer " + buffer)
+
 	return buffer
 }
+
 // $or 는 Full Query 이므로 성능저하 가능성 있음
 // func multiQueryMaker(key string, data []string) string {
 // 	var selectKey string
