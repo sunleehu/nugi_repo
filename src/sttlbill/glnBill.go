@@ -283,15 +283,43 @@ func (t *glnBillCC) getBillHistory(stub shim.ChaincodeStubInterface, args []stri
 
 	// Query
 	var queryString string
-	// AS-IS BEFORE 2019.12.27 if qArgs.LcGlnUnqCd == "" 조건 변경 이미 빈값이면 바로 전단계에서 끝남
-	// TO-BE SINCE 2019.12.27 조회 SEL_SSP_CD(gateway 용 필드 ) 빈값이면 SSP 조회가 아니므로 lcoal_gln_cd 가 해당하는 건만 보여준다.
+	
+	//AS-IS 2019.12.27 조회 SEL_SSP_CD(gateway 용 필드 ) 빈값이면 SSP 조회가 아니므로 lcoal_gln_cd 가 해당하는 건만 보여준다.
+	//TO-BE 2020.01.17 변경 - SEL_SP_CD 가 빈값이면 LOCAL_GLN_CD 또는 BP_LOCAL_GLN_CD 가 lcGlnUnqCd 값이 존재하는 데이터를 리턴해준다 
+	//queryString = fmt.Sprintf(`{"selector": {"ADJ_PBL_NO": "%s", "$or":[{"LOCAL_GLN_CD":"%s"},{"BP_LOCAL_GLN_CD":"%s"}]}}`, qArgs.AdjPblNo, qArgs.LcGlnUnqCd, qArgs.LcGlnUnqCd)
 	if qArgs.SpLocalGlnCd == "" {
-		// queryString = fmt.Sprintf(`{"selector": {"$and":[{"ADJ_PBL_DT":{"$gte": "%s"}},{"ADJ_PBL_DT":{"$lte": "%s"}}]}, "use_index":["indexDateDoc", "indexDate"]}`, qArgs.ReqStartTime, qArgs.ReqEndTime)
-		queryString = fmt.Sprintf(`{"selector": {"$and":[{"LOCAL_GLN_CD": "%s"},{"ADJ_PBL_DT":{"$gte": "%s"}},{"ADJ_PBL_DT":{"$lte": "%s"}}]}, "use_index":["indexDateLclDoc", "indexDateLcl"]}`, qArgs.BpLocalGlnCd, qArgs.ReqStartTime, qArgs.ReqEndTime)
+		//queryString = fmt.Sprintf(`{"selector": {"$and":[{"LOCAL_GLN_CD": "%s"},{"ADJ_PBL_DT":{"$gte": "%s"}},{"ADJ_PBL_DT":{"$lte": "%s"}}]}, "use_index":["indexDateLclDoc", "indexDateLcl"]}`, qArgs.BpLocalGlnCd, qArgs.ReqStartTime, qArgs.ReqEndTime)
+		queryString = fmt.Sprintf(`{"selector": {"$and": [
+			{
+			   "ADJ_PBL_DT": {
+				  "$gte": "%s"
+			   }
+			},
+			{
+			   "ADJ_PBL_DT": {
+				  "$lte": "%s"
+			   }
+			}
+		 ],
+		 "$or": [
+			{
+			   "LOCAL_GLN_CD": "%s"
+			},
+			{
+			   "BP_LOCAL_GLN_CD": "%s"
+			}
+		 ]
+	  },
+	  "use_index": [
+		 "indexDateLclDoc",
+		 "indexDateLcl"
+	  ]}`, qArgs.ReqStartTime, qArgs.ReqEndTime, qArgs.BpLocalGlnCd, qArgs.BpLocalGlnCd)
 	} else {
 		// queryString = fmt.Sprintf(`{"selector": {"$and":[{"LOCAL_GLN_CD": "%s"},{"ADJ_PBL_DT":{"$gte": "%s"}},{"ADJ_PBL_DT":{"$lte": "%s"}}]}, "use_index":["indexDateLclDoc", "indexDateLcl"]}`, qArgs.LcGlnUnqCd, qArgs.ReqStartTime, qArgs.ReqEndTime)
 		queryString = fmt.Sprintf(`{"selector": {"$and":[{"BP_LOCAL_GLN_CD":"%s"},{"LOCAL_GLN_CD": "%s"},{"ADJ_PBL_DT":{"$gte": "%s"}},{"ADJ_PBL_DT":{"$lte": "%s"}}]}, "use_index":["indexDateLclDoc", "indexDateLcl"]}`, qArgs.BpLocalGlnCd, qArgs.SpLocalGlnCd, qArgs.ReqStartTime, qArgs.ReqEndTime)
 	}
+	
+
 	queryResults, err := getQueryResultForQueryStringWithPagination(stub, queryString, pgs, qArgs.BookMark, qArgs.SpLocalGlnCd)
 	if err != nil {
 		return shim.Error(errMessage("BCCE0008", err))
