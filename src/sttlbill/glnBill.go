@@ -289,31 +289,7 @@ func (t *glnBillCC) getBillHistory(stub shim.ChaincodeStubInterface, args []stri
 	//queryString = fmt.Sprintf(`{"selector": {"ADJ_PBL_NO": "%s", "$or":[{"LOCAL_GLN_CD":"%s"},{"BP_LOCAL_GLN_CD":"%s"}]}}`, qArgs.AdjPblNo, qArgs.LcGlnUnqCd, qArgs.LcGlnUnqCd)
 	if qArgs.SpLocalGlnCd == "" {
 		//queryString = fmt.Sprintf(`{"selector": {"$and":[{"LOCAL_GLN_CD": "%s"},{"ADJ_PBL_DT":{"$gte": "%s"}},{"ADJ_PBL_DT":{"$lte": "%s"}}]}, "use_index":["indexDateLclDoc", "indexDateLcl"]}`, qArgs.BpLocalGlnCd, qArgs.ReqStartTime, qArgs.ReqEndTime)
-		queryString = fmt.Sprintf(`{"selector": {"$and": [
-			{
-			   "ADJ_PBL_DT": {
-				  "$gte": "%s"
-			   }
-			},
-			{
-			   "ADJ_PBL_DT": {
-				  "$lte": "%s"
-			   }
-			}
-		 ],
-		 "$or": [
-			{
-			   "LOCAL_GLN_CD": "%s"
-			},
-			{
-			   "BP_LOCAL_GLN_CD": "%s"
-			}
-		 ]
-	  },
-	  "use_index": [
-		 "indexDateLclDoc",
-		 "indexDateLcl"
-	  ]}`, qArgs.ReqStartTime, qArgs.ReqEndTime, qArgs.BpLocalGlnCd, qArgs.BpLocalGlnCd)
+		queryString = fmt.Sprintf(`{"selector": {"$and":[{"ADJ_PBL_DT": {"$gte": "%s"}},{"ADJ_PBL_DT": {"$lte": "%s"}}],"$or": [{"LOCAL_GLN_CD": "%s"},{"BP_LOCAL_GLN_CD": "%s"}]},"use_index": ["indexDateLclDoc", "indexDateLcl"]}`, qArgs.ReqStartTime, qArgs.ReqEndTime, qArgs.BpLocalGlnCd, qArgs.BpLocalGlnCd)
 	} else {
 		// queryString = fmt.Sprintf(`{"selector": {"$and":[{"LOCAL_GLN_CD": "%s"},{"ADJ_PBL_DT":{"$gte": "%s"}},{"ADJ_PBL_DT":{"$lte": "%s"}}]}, "use_index":["indexDateLclDoc", "indexDateLcl"]}`, qArgs.LcGlnUnqCd, qArgs.ReqStartTime, qArgs.ReqEndTime)
 		queryString = fmt.Sprintf(`{"selector": {"$and":[{"BP_LOCAL_GLN_CD":"%s"},{"LOCAL_GLN_CD": "%s"},{"ADJ_PBL_DT":{"$gte": "%s"}},{"ADJ_PBL_DT":{"$lte": "%s"}}]}, "use_index":["indexDateLclDoc", "indexDateLcl"]}`, qArgs.BpLocalGlnCd, qArgs.SpLocalGlnCd, qArgs.ReqStartTime, qArgs.ReqEndTime)
