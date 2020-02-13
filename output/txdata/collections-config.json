@@ -208,6 +208,70 @@
     "maxPeerCount": 3,
     "blockToLive": 500000,
     "memberOnlyRead": true
+  },
+  {
+    "name": "KOEXKRSVNBJP",
+    "policy": {
+      "identities": [{
+          "role": {
+            "name": "member",
+            "mspId": "KoexkrOrgMSP"
+          }
+        },
+        {
+          "role": {
+            "name": "member",
+            "mspId": "GintwwOrgMSP"
+          }
+        }
+      ],
+      "policy": {
+        "1-of": [
+          {
+            "signed-by": 0
+          },
+          {
+            "signed-by": 1
+          }
+        ]
+      }
+    },
+    "requiredPeerCount": 1,
+    "maxPeerCount": 3,
+    "blockToLive": 500000,
+    "memberOnlyRead": true
+  },
+  {
+    "name": "KOEXKRGRABSG",
+    "policy": {
+      "identities": [{
+          "role": {
+            "name": "member",
+            "mspId": "KoexkrOrgMSP"
+          }
+        },
+        {
+          "role": {
+            "name": "member",
+            "mspId": "GintwwOrgMSP"
+          }
+        }
+      ],
+      "policy": {
+        "1-of": [
+          {
+            "signed-by": 0
+          },
+          {
+            "signed-by": 1
+          }
+        ]
+      }
+    },
+    "requiredPeerCount": 1,
+    "maxPeerCount": 3,
+    "blockToLive": 500000,
+    "memberOnlyRead": true
   }
 ]
  
